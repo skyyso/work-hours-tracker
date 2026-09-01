@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>工时薪酬助手</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <style>
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    body { -webkit-tap-highlight-color: transparent; }
+    .drawer-enter-active, .drawer-leave-active { transition: transform .25s cubic-bezier(.16,1,.3,1), opacity .25s ease; }
+    .drawer-enter-from, .drawer-leave-to { transform: translateY(100%); opacity: 0; }
+    .fade-enter-active, .fade-leave-active { transition: opacity .15s ease; }
+    .fade-enter-from, .fade-leave-to { opacity: 0; }
+    .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+  </style>
+</head>
+<body class="bg-slate-200">
+
+<div id="app" class="max-w-md mx-auto min-h-screen bg-slate-50 flex flex-col shadow-xl relative">
+
+  <!-- ===== 顶部栏 ===== -->
+  <header class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-5 pt-5 pb-4 rounded-b-3xl shadow-md shrink-0">
+    <!-- 月份切换（日历/汇总） -->
+    <div v-if="tab !== 'settings'" class="flex justify-between items-center">
+      <div class="flex items-center space-x-1">
+        <button @click="changeMonth(-1)" class="w-7 h-7 rounded-full hover:bg-white/20 active:scale-90 transition text-sm">◀</button>
+        <span class="text-base font-bold tracking-wide">{{ currentYear }}年{{ currentMonth + 1 }}月</span>
+        <button @click="changeMonth(1)" class="w-7 h-7 rounded-full hover:bg-white/20 active:scale-90 transition text-sm">▶</button>
+      </div>
+      <button v-if="!isCurrentMonth" @click="goToday" class="text-[11px] bg-white/20 px-2.5 py-1 rounded-full font-medium active:scale-95 transition">回今天</button>
+      <span v-else class="text-[11px] text-blue-200">{{ tab === 'calendar' ? '打卡' : '汇总' }}</span>
+    </div>
+    <!-- 设置页标题 -->
+    <div v-else class="flex items-center h-7">
+      <span class="text-base font-bold tracking-wide">⚙️ 设置</span>
+    </div>
+
+    <!-- 三格概览（仅日历页） -->
+    <div v-if="tab === 'calendar'" class="grid grid-cols-3 gap-2 mt-3.5 text-center">
+      <div class="bg-white/10 rounded-xl py-2">
+        <p class="text-[10px] text-blue-100">出勤</p>
+        <p class="text-base font-black leading-tight">{{ monthStats.workDays }}<span class="text-[10px] font-normal">/{{ settings.fullDays }}</span></p>
+      </div>
+      <div class="bg-white/10 rounded-xl py-2">
+        <p class="text-[10px] text-blue-100">总工时</p>
+        <p class="text-base font-black leading-tight">{{ fmt(monthStats.totalHours) }}<span class="text-[10px] font-normal">h</span></p>
+      </div>
+      <div class="bg-white/10 rounded-xl py-2">
+        <p class="text-[10px] text-blue-100">工时收入</p>
+        <p class="text-base font-black text-amber-300 leading-tight">{{ money(monthStats.basePay) }}</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== 页面容器 ===== -->
+  <main class="flex-1 pb-24">
+
+    <!-- ========== ① 日历打卡 ========== -->
+    <section v-show="tab === 'calendar'" class="p-4">
+      <div class="grid grid-cols-7 text-center text-[11px] font-semibold text-slate-400 mb-1.5">
+        <span class="text-rose-400">日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span class="text-indigo-400">六</span>
+      </div>
+
+      <div class="grid grid-cols-7 gap-1">
+        <div v-for="b in firstDayOfWeek" :key="'b'+b" class="h-[64px]"></div>
+
+        <div v-for="day in daysInMonth" :key="day" @click="openDayDrawer(day)"
+          class="h-[64px] rounded-lg p-1 flex flex-col justify-between border relative active:scale-95 transition cursor-pointer overflow-hidden"
+          :class="cellClass(day)">
+          <div class="flex justify-between items-start">
+            <span class="text-[11px] font-bold leading-none tabular-nums" :class="isToday(day) ? 'text-blue-600' : 'text-slate-500'">{{ day }}</span>
+            <span class="flex space-x-0.5">
+              <span v-if="getRecord(day)?.status === 'work' && getRecord(day)?.contraband_found > 0" class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              <span v-if="hasPenalty(day)" class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+            </span>
+          </div>
+          <!-- 徽章统一撑满格宽、统一高度：班次靠左、工时靠右，小数位占固定槽位，整数与 .5 不会错位 -->
+          <template v-if="getRecord(day)?.status === 'work'">
+            <span class="flex items-center justify-between w-full px-1 py-[3px] rounded text-[10px] font-bold leading-none"
+              :class="getRecord(day).shift_type === 'day' ? 'bg-blue-100 text-blue-700' : 'bg-violet-100 text-violet-700'">
+              <span>{{ getRecord(day).shift_type === 'day' ? '白' : '夜' }}</span>
+              <span class="tabular-nums">{{ hInt(getRecord(day).hours) }}<span class="inline-block w-[8px] text-left">{{ hFrac(getRecord(day).hours) }}</span></span>
+            </span>
+          </template>
+          <span v-else-if="getRecord(day)?.status === 'rest'" class="block w-full px-1 py-[3px] rounded text-[10px] font-bold leading-none text-center bg-slate-200/70 text-slate-500">休</span>
+          <span v-else-if="getRecord(day)?.status === 'leave'" class="block w-full px-1 py-[3px] rounded text-[10px] font-bold leading-none text-center bg-amber-100 text-amber-700">假</span>
+          <span v-else class="block w-full px-1 py-[3px] text-[10px] leading-none text-center text-slate-300">—</span>
+        </div>
+      </div>
+
+      <div class="mt-3 flex items-center justify-center space-x-3 text-[10px] text-slate-400">
+        <span class="flex items-center space-x-1"><i class="w-1.5 h-3 rounded-sm bg-blue-300 inline-block"></i><span>1–{{ settings.cutoff }}日 → {{ settings.payDayA }}号发</span></span>
+        <span class="flex items-center space-x-1"><i class="w-1.5 h-3 rounded-sm bg-violet-300 inline-block"></i><span>{{ settings.cutoff + 1 }}日– → 次月{{ settings.payDayB }}号发</span></span>
+      </div>
+
+      <p class="mt-2 text-center text-[10px] text-slate-400">奖励与处罚统一在次月{{ settings.payDayB }}号结算</p>
+    </section>
+
+    <!-- ========== ② 汇总 ========== -->
+    <section v-show="tab === 'summary'" class="p-4 space-y-3">
+
+      <!-- 本月到账 -->
+      <div class="bg-white rounded-2xl border border-slate-200/70 shadow-sm overflow-hidden">
+        <div class="px-4 py-2.5 border-b border-slate-100 flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-700">💳 本月到账</span>
+          <span class="text-[10px] text-slate-400">时薪 {{ settings.rate }} 元/h</span>
+        </div>
+        <div class="divide-y divide-slate-100">
+          <div class="flex items-center justify-between px-4 py-3">
+            <div class="min-w-0 pr-2">
+              <p class="text-xs font-bold text-slate-700">{{ currentMonth + 1 }}月{{ settings.payDayB }}日</p>
+              <p class="text-[10px] text-slate-400 mt-0.5">{{ prevLabel.month + 1 }}月下半月 {{ fmt(prevStats.h2) }}h + 奖惩 {{ signed(prevStats.adjustNet) }}</p>
+            </div>
+            <span class="text-base font-black text-slate-800 shrink-0">{{ money(payoutThisB) }}</span>
+          </div>
+          <div class="flex items-center justify-between px-4 py-3">
+            <div class="min-w-0 pr-2">
+              <p class="text-xs font-bold text-slate-700">{{ currentMonth + 1 }}月{{ settings.payDayA }}日</p>
+              <p class="text-[10px] text-slate-400 mt-0.5">本月上半月 {{ fmt(monthStats.h1) }}h · 纯工时</p>
+            </div>
+            <span class="text-base font-black text-slate-800 shrink-0">{{ money(payoutThisA) }}</span>
+          </div>
+          <div class="flex items-center justify-between px-4 py-2.5 bg-slate-50">
+            <span class="text-xs font-bold text-slate-500">本月现金流合计</span>
+            <span class="text-lg font-black text-blue-600">{{ money(payoutThisB + payoutThisA) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 本月工时 -->
+      <div class="bg-white rounded-2xl border border-slate-200/70 shadow-sm p-4">
+        <p class="text-xs font-bold text-slate-700 mb-3">⏱ 本月工时</p>
+        <div class="grid grid-cols-2 gap-2 mb-3">
+          <div class="bg-blue-50/60 rounded-xl p-2.5 border border-blue-100/70">
+            <p class="text-[10px] text-blue-700/70">上半月 1–{{ settings.cutoff }}日</p>
+            <p class="text-sm font-black text-blue-700 mt-0.5">{{ fmt(monthStats.h1) }}h</p>
+            <p class="text-[10px] text-slate-400">{{ money(monthStats.h1 * settings.rate) }}</p>
+          </div>
+          <div class="bg-violet-50/60 rounded-xl p-2.5 border border-violet-100/70">
+            <p class="text-[10px] text-violet-700/70">下半月 {{ settings.cutoff + 1 }}日–月底</p>
+            <p class="text-sm font-black text-violet-700 mt-0.5">{{ fmt(monthStats.h2) }}h</p>
+            <p class="text-[10px] text-slate-400">{{ money(monthStats.h2 * settings.rate) }}</p>
+          </div>
+        </div>
+        <div class="space-y-1.5 text-xs">
+          <div class="flex justify-between"><span class="text-slate-500">出勤天数</span><span class="font-bold text-slate-700">{{ monthStats.workDays }} 天（白 {{ monthStats.dayShifts }} / 夜 {{ monthStats.nightShifts }}）</span></div>
+          <div class="flex justify-between"><span class="text-slate-500">休息 / 请假</span><span class="font-bold text-slate-700">{{ monthStats.restDays }} / {{ monthStats.leaveDays }} 天</span></div>
+          <div class="flex justify-between pt-1.5 border-t border-slate-100"><span class="text-slate-500">工时收入合计</span><span class="font-black text-slate-800">{{ money(monthStats.basePay) }}</span></div>
+        </div>
+      </div>
+
+      <!-- 本月奖惩（挂账） -->
+      <div class="bg-white rounded-2xl border border-slate-200/70 shadow-sm p-4">
+        <div class="flex items-center justify-between mb-1">
+          <p class="text-xs font-bold text-slate-700">🎯 本月奖惩</p>
+          <span class="text-[10px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">次月{{ settings.payDayB }}号结算</span>
+        </div>
+        <p class="text-[10px] text-slate-400 mb-2.5">以下金额不计入当月工资</p>
+        <div class="space-y-1.5 text-xs">
+          <div class="flex justify-between">
+            <span class="text-slate-500">满勤奖<span class="text-slate-400">{{ monthStats.workDays >= settings.fullDays ? '（' + fmt(monthStats.totalHours) + 'h×' + settings.fullBonusPerHour + '）' : '（未达' + settings.fullDays + '天）' }}</span></span>
+            <span class="font-bold" :class="monthStats.fullBonus > 0 ? 'text-emerald-600' : 'text-slate-400'">{{ monthStats.fullBonus > 0 ? '+' + money(monthStats.fullBonus) : '¥0' }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-500">查获奖励<span class="text-slate-400">（{{ monthStats.foundCount }}件）</span></span>
+            <span class="font-bold" :class="monthStats.foundBonus > 0 ? 'text-emerald-600' : 'text-slate-400'">{{ monthStats.foundBonus > 0 ? '+' + money(monthStats.foundBonus) : '¥0' }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-500">漏查处罚<span class="text-slate-400">（{{ monthStats.missedCount }}件）</span></span>
+            <span class="font-bold" :class="monthStats.missedPenalty > 0 ? 'text-rose-600' : 'text-slate-400'">{{ monthStats.missedPenalty > 0 ? '-' + money(monthStats.missedPenalty) : '¥0' }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-500">其他扣款</span>
+            <span class="font-bold" :class="monthStats.otherPenalties > 0 ? 'text-rose-600' : 'text-slate-400'">{{ monthStats.otherPenalties > 0 ? '-' + money(monthStats.otherPenalties) : '¥0' }}</span>
+          </div>
+          <div class="flex justify-between pt-1.5 border-t border-slate-100">
+            <span class="text-slate-500">奖惩净额</span>
+            <span class="font-black" :class="monthStats.adjustNet >= 0 ? 'text-emerald-700' : 'text-rose-700'">{{ signed(monthStats.adjustNet) }}</span>
+          </div>
+        </div>
+        <div v-if="penaltyDetails.length" class="mt-3 pt-2.5 border-t border-slate-100 space-y-1">
+          <p class="text-[10px] font-bold text-slate-400 mb-1">处罚明细</p>
+          <div v-for="d in penaltyDetails" :key="d.day" class="flex justify-between text-[11px]">
+            <span class="text-slate-500 truncate pr-2">{{ d.day }}日 {{ d.reason }}</span>
+            <span class="text-rose-600 font-bold shrink-0">-{{ money(d.amount) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 次月预估 -->
+      <div class="bg-amber-50/70 rounded-2xl border border-amber-200/70 p-4">
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-xs font-bold text-amber-900">{{ nextLabel.month + 1 }}月{{ settings.payDayB }}日预估</p>
+          <span class="text-lg font-black text-amber-700">{{ money(payoutNextB) }}</span>
+        </div>
+        <div class="space-y-1 text-[11px] text-amber-800/80">
+          <div class="flex justify-between"><span>本月下半月工时 {{ fmt(monthStats.h2) }}h</span><span>{{ money(monthStats.h2 * settings.rate) }}</span></div>
+          <div class="flex justify-between"><span>本月奖惩结算</span><span>{{ signed(monthStats.adjustNet) }}</span></div>
+        </div>
+        <p v-if="monthStats.h2 * settings.rate + monthStats.adjustNet < 0" class="mt-2 text-[10px] text-rose-600 font-bold">⚠️ 处罚已超过下半月工时收入，实发按 ¥0 计，差额可能顺延</p>
+      </div>
+
+      <!-- 诊断 -->
+      <div class="bg-white rounded-2xl border border-slate-200/70 shadow-sm p-4">
+        <p class="text-xs font-bold text-slate-700 mb-2">💡 诊断</p>
+        <div class="space-y-1.5 text-[11px] leading-relaxed">
+          <p v-if="monthStats.workDays === 0" class="text-slate-400">本月还没有打卡记录。</p>
+          <template v-else>
+            <p v-if="monthStats.workDays < settings.fullDays" class="text-slate-600">
+              距离满勤还差 <b class="text-slate-800">{{ settings.fullDays - monthStats.workDays }} 天</b>，达成可得满勤奖约 <b class="text-emerald-700">{{ money(monthStats.totalHours * settings.fullBonusPerHour) }}</b>（{{ nextLabel.month + 1 }}月{{ settings.payDayB }}号发）。
+            </p>
+            <p v-else class="text-emerald-700">🎉 已达成 {{ settings.fullDays }} 天满勤，满勤奖 <b>+{{ money(monthStats.fullBonus) }}</b> 将于 {{ nextLabel.month + 1 }}月{{ settings.payDayB }}号发放。</p>
+            <p v-if="monthStats.missedCount > 0" class="text-slate-600">
+              本月 {{ monthStats.missedCount }} 次漏查，将扣 <b class="text-rose-600">{{ money(monthStats.missedPenalty) }}</b>，约等于白干 {{ fmt(monthStats.missedPenalty / settings.rate) }} 小时。
+            </p>
+          </template>
+        </div>
+      </div>
+
+      <button @click="copyReport" class="w-full py-3 bg-slate-800 text-white rounded-2xl text-xs font-bold active:scale-95 transition shadow-sm">
+        {{ copied ? '✓ 已复制到剪贴板' : '复制文本报告' }}
+      </button>
+    </section>
+
+    <!-- ========== ③ 设置 ========== -->
+    <section v-show="tab === 'settings'" class="p-4 space-y-3">
+
+      <div class="bg-white rounded-2xl border border-slate-200/70 shadow-sm overflow-hidden">
+        <p class="px-4 py-2.5 text-xs font-bold text-slate-700 bg-slate-50 border-b border-slate-100">💰 薪酬规则</p>
+        <div class="divide-y divide-slate-100">
+          <label class="flex items-center justify-between px-4 py-2.5">
+            <span class="text-xs text-slate-600">基础时薪（元/h）</span>
+            <input type="number" step="0.5" min="0" v-model.number="settings.rate" class="w-24 text-right text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-blue-500" />
+          </label>
+          <label class="flex items-center justify-between px-4 py-2.5">
+            <span class="text-xs text-slate-600">满勤天数（天）</span>
+            <input type="number" step="1" min="1" max="31" v-model.number="settings.fullDays" class="w-24 text-right text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-blue-500" />
+          </label>
+          <label class="flex items-center justify-between px-4 py-2.5">
+            <span class="text-xs text-slate-600">满勤奖（元/工时）</span>
+            <input type="number" step="0.5" min="0" v-model.number="settings.fullBonusPerHour" class="w-24 text-right text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-blue-500" />
+          </label>
+        </div>
+        <p class="px-4 py-2.5 text-[10px] text-slate-400 bg-slate-50/70 leading-relaxed">满勤奖按「当月总工时 × 单价」计算，属于奖励，不并入当月工资。</p>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-slate-200/70 shadow-sm overflow-hidden">
+        <p class="px-4 py-2.5 text-xs font-bold text-slate-700 bg-slate-50 border-b border-slate-100">🎯 奖惩标准</p>
+        <div class="divide-y divide-slate-100">
+          <label class="flex items-center justify-between px-4 py-2.5">
+            <span class="text-xs text-slate-600">查获违禁品（元/件）</span>
+            <input type="number" step="1" min="0" v-model.number="settings.foundBonus" class="w-24 text-right text-xs font-bold text-emerald-700 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-blue-500" />
+          </label>
+          <label class="flex items-center justify-between px-4 py-2.5">
+            <span class="text-xs text-slate-600">漏查违禁品（元/件）</span>
+            <input type="number" step="1" min="0" v-model.number="settings.missedPenalty" class="w-24 text-right text-xs font-bold text-rose-600 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-blue-500" />
+          </label>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-slate-200/70 shadow-sm overflow-hidden">
+        <p class="px-4 py-2.5 text-xs font-bold text-slate-700 bg-slate-50 border-b border-slate-100">📅 发放周期</p>
+        <div class="divide-y divide-slate-100">
+          <label class="flex items-center justify-between px-4 py-2.5">
+            <span class="text-xs text-slate-600">上半月截止日</span>
+            <input type="number" step="1" min="1" max="28" v-model.number="settings.cutoff" class="w-24 text-right text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-blue-500" />
+          </label>
+          <label class="flex items-center justify-between px-4 py-2.5">
+            <span class="text-xs text-slate-600">上半月发放日（当月）</span>
+            <input type="number" step="1" min="1" max="31" v-model.number="settings.payDayA" class="w-24 text-right text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-blue-500" />
+          </label>
+          <label class="flex items-center justify-between px-4 py-2.5">
+            <span class="text-xs text-slate-600">下半月发放日（次月）</span>
+            <input type="number" step="1" min="1" max="31" v-model.number="settings.payDayB" class="w-24 text-right text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-blue-500" />
+          </label>
+        </div>
+        <p class="px-4 py-2.5 text-[10px] text-slate-400 bg-slate-50/70 leading-relaxed">
+          1–{{ settings.cutoff }}日工时 → 当月{{ settings.payDayA }}号发；{{ settings.cutoff + 1 }}日–月底工时 + 当月奖惩 → 次月{{ settings.payDayB }}号一起发。
+        </p>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-slate-200/70 shadow-sm overflow-hidden">
+        <p class="px-4 py-2.5 text-xs font-bold text-slate-700 bg-slate-50 border-b border-slate-100">🕐 班次默认工时</p>
+        <div class="divide-y divide-slate-100">
+          <label class="flex items-center justify-between px-4 py-2.5">
+            <span class="text-xs text-slate-600">☀️ 白班默认（h）</span>
+            <input type="number" step="0.5" min="0" max="24" v-model.number="settings.dayHours" class="w-24 text-right text-xs font-bold text-blue-700 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-blue-500" />
+          </label>
+          <label class="flex items-center justify-between px-4 py-2.5">
+            <span class="text-xs text-slate-600">🌙 夜班默认（h）</span>
+            <input type="number" step="0.5" min="0" max="24" v-model.number="settings.nightHours" class="w-24 text-right text-xs font-bold text-violet-700 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-blue-500" />
+          </label>
+        </div>
+        <p class="px-4 py-2.5 text-[10px] text-slate-400 bg-slate-50/70">夜班跨天，工时全部归入开始打卡的那一天。</p>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-slate-200/70 shadow-sm overflow-hidden">
+        <p class="px-4 py-2.5 text-xs font-bold text-slate-700 bg-slate-50 border-b border-slate-100">🗄 数据</p>
+        <div class="divide-y divide-slate-100">
+          <div class="flex items-center justify-between px-4 py-2.5">
+            <span class="text-xs text-slate-600">已存打卡记录</span>
+            <span class="text-xs font-bold text-slate-800">{{ recordCount }} 天</span>
+          </div>
+          <button @click="exportData" class="w-full text-left px-4 py-3 text-xs font-medium text-blue-600 active:bg-slate-50 transition">导出备份（JSON 文件）</button>
+          <button @click="copyData" class="w-full text-left px-4 py-3 text-xs font-medium text-blue-600 active:bg-slate-50 transition">{{ dataCopied ? '✓ 已复制到剪贴板' : '复制数据到剪贴板' }}</button>
+          <label class="block px-4 py-3 text-xs font-medium text-blue-600 active:bg-slate-50 transition cursor-pointer">
+            导入备份（同日期覆盖）
+            <input type="file" accept=".json,application/json" @change="importData" class="hidden" />
+          </label>
+          <button @click="resetSettings" class="w-full text-left px-4 py-3 text-xs font-medium text-slate-500 active:bg-slate-50 transition">恢复默认设置（不动打卡数据）</button>
+          <button @click="clearMonth" class="w-full text-left px-4 py-3 text-xs font-medium text-rose-600 active:bg-rose-50 transition">清空 {{ currentYear }}年{{ currentMonth + 1 }}月记录</button>
+          <button @click="clearAll" class="w-full text-left px-4 py-3 text-xs font-medium text-rose-600 active:bg-rose-50 transition">清空全部打卡记录</button>
+        </div>
+      </div>
+
+      <p class="text-center text-[10px] text-slate-400 leading-relaxed pt-1 pb-2">
+        数据仅保存在本机浏览器（localStorage）。<br />清除浏览器数据会丢失，建议定期导出备份。
+      </p>
+    </section>
+
+  </main>
+
+  <!-- ===== 底部 Tab 导航 ===== -->
+  <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white/95 backdrop-blur border-t border-slate-200 flex safe-bottom z-40">
+    <button v-for="t in tabs" :key="t.id" @click="tab = t.id"
+      class="flex-1 flex flex-col items-center py-2.5 active:scale-95 transition">
+      <span class="text-lg leading-none" :class="tab === t.id ? '' : 'opacity-40 grayscale'">{{ t.icon }}</span>
+      <span class="text-[10px] mt-1 font-bold" :class="tab === t.id ? 'text-blue-600' : 'text-slate-400'">{{ t.label }}</span>
+    </button>
+  </nav>
+
+  <!-- ===== 打卡抽屉 ===== -->
+  <transition name="drawer">
+    <div v-if="isDrawerOpen" class="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm" @click.self="isDrawerOpen = false">
+      <div class="w-full max-w-md bg-white rounded-t-3xl px-5 pt-5 pb-6 shadow-2xl overflow-y-auto max-h-[88vh] no-scrollbar">
+
+        <div class="flex justify-between items-start mb-4 pb-3 border-b border-slate-100">
+          <div>
+            <h3 class="text-base font-bold text-slate-800">{{ currentMonth + 1 }}月{{ selectedDay }}日 打卡</h3>
+            <p class="text-[10px] text-slate-400 mt-0.5">
+              工时计入
+              <b :class="selectedDay <= settings.cutoff ? 'text-blue-600' : 'text-violet-600'">
+                {{ selectedDay <= settings.cutoff ? `${currentMonth + 1}月${settings.payDayA}号` : `${nextLabel.month + 1}月${settings.payDayB}号` }}
+              </b>
+              · 奖惩次月{{ settings.payDayB }}号结算
+            </p>
+          </div>
+          <button @click="isDrawerOpen = false" class="text-slate-300 hover:text-slate-500 text-xl font-bold leading-none px-1">✕</button>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 mb-4">
+          <button v-for="st in statusOptions" :key="st.id" @click="draftRecord.status = st.id"
+            class="py-2.5 rounded-xl font-bold text-xs border-2 transition"
+            :class="draftRecord.status === st.id ? 'border-blue-600 bg-blue-50 text-blue-600' : 'border-slate-100 bg-slate-50 text-slate-400'">
+            {{ st.label }}
+          </button>
+        </div>
+
+        <div v-if="draftRecord.status === 'work'" class="space-y-3.5">
+          <div class="flex space-x-2">
+            <button @click="selectShift('day')"
+              class="flex-1 py-2.5 rounded-xl text-xs font-bold border transition"
+              :class="draftRecord.shift_type === 'day' ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-50 text-slate-500 border-slate-200'">
+              ☀️ 白班 {{ cfg.dayHours }}h
+            </button>
+            <button @click="selectShift('night')"
+              class="flex-1 py-2.5 rounded-xl text-xs font-bold border transition"
+              :class="draftRecord.shift_type === 'night' ? 'bg-violet-600 text-white border-violet-600' : 'bg-slate-50 text-slate-500 border-slate-200'">
+              🌙 夜班 {{ cfg.nightHours }}h
+            </button>
+          </div>
+
+          <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200/70">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-[11px] font-bold text-slate-500">结算工时</span>
+              <span class="text-xs font-black text-blue-600 bg-white px-2 py-0.5 rounded-lg border border-blue-100">{{ draftRecord.hours }} h</span>
+            </div>
+            <div class="flex overflow-x-auto space-x-1.5 no-scrollbar pb-0.5">
+              <button v-for="h in hourOptions" :key="h" @click="draftRecord.hours = h"
+                class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold shrink-0 transition tabular-nums"
+                :class="draftRecord.hours === h ? 'bg-blue-600 text-white' : 'bg-white text-slate-500 border border-slate-200'">
+                {{ h }}
+              </button>
+            </div>
+          </div>
+
+          <div class="bg-amber-50/60 p-3 rounded-2xl border border-amber-100">
+            <p class="text-[10px] text-amber-800/80 font-bold mb-2.5 text-center">以下奖惩不计入当月工资，次月{{ settings.payDayB }}号结算</p>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="text-center">
+                <p class="text-[10px] font-bold text-emerald-700">查获 +{{ settings.foundBonus }}/件</p>
+                <div class="flex justify-center items-center space-x-2 mt-1.5">
+                  <button @click="draftRecord.contraband_found = Math.max(0, draftRecord.contraband_found - 1)" class="w-7 h-7 bg-white rounded-full shadow-sm text-sm font-bold border border-slate-200 active:scale-90">−</button>
+                  <span class="font-black text-sm text-slate-700 w-5">{{ draftRecord.contraband_found }}</span>
+                  <button @click="draftRecord.contraband_found++" class="w-7 h-7 bg-emerald-600 text-white rounded-full shadow-sm text-sm font-bold active:scale-90">+</button>
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-[10px] font-bold text-rose-600">漏查 −{{ settings.missedPenalty }}/件</p>
+                <div class="flex justify-center items-center space-x-2 mt-1.5">
+                  <button @click="draftRecord.contraband_missed = Math.max(0, draftRecord.contraband_missed - 1)" class="w-7 h-7 bg-white rounded-full shadow-sm text-sm font-bold border border-slate-200 active:scale-90">−</button>
+                  <span class="font-black text-sm text-slate-700 w-5">{{ draftRecord.contraband_missed }}</span>
+                  <button @click="draftRecord.contraband_missed++" class="w-7 h-7 bg-rose-500 text-white rounded-full shadow-sm text-sm font-bold active:scale-90">+</button>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center space-x-2 mt-3">
+              <input type="number" min="0" step="1" v-model.number="draftRecord.other_penalty" placeholder="其他扣款"
+                class="w-24 bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] text-slate-700 outline-none focus:border-blue-500" />
+              <input type="text" v-model="draftRecord.penalty_reason" placeholder="处罚原因（选填）"
+                class="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] text-slate-700 outline-none focus:border-blue-500" />
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-5 flex space-x-2.5">
+          <button @click="deleteRecord" class="px-4 py-3 bg-slate-100 text-slate-500 rounded-xl text-xs font-bold active:scale-95 transition">清除</button>
+          <button @click="saveRecord" class="flex-1 py-3 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-md active:scale-95 transition">保存打卡</button>
+        </div>
+      </div>
+    </div>
+  </transition>
+
+  <!-- ===== 轻提示 ===== -->
+  <transition name="fade">
+    <div v-if="toast" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-[60] bg-slate-800/95 text-white text-xs font-medium px-4 py-2.5 rounded-full shadow-lg whitespace-nowrap">
+      {{ toast }}
+    </div>
+  </transition>
+
+</div>
+
+<script>
+const { createApp, ref, reactive, computed, watch, onMounted } = Vue;
+
+createApp({
+  setup() {
+    // ===== 默认规则 =====
+    const DEFAULTS = {
+      rate: 19.5,            // 基础时薪，当月工资只含工时
+      fullDays: 27,          // 满勤门槛（天）
+      fullBonusPerHour: 1,   // 满勤奖 = 当月总工时 × 该单价（属奖励，次月结）
+      foundBonus: 10,        // 查获违禁品 元/件
+      missedPenalty: 20,     // 漏查违禁品 元/件
+      cutoff: 15,            // 上半月截止日
+      payDayA: 22,           // 上半月工时 → 当月该日发
+      payDayB: 10,           // 下半月工时 + 当月奖惩 → 次月该日发
+      dayHours: 8,           // 白班默认工时
+      nightHours: 10         // 夜班默认工时
+    };
+
+    const settings = reactive({ ...DEFAULTS });
+    const records = ref({});
+
+    // ===== 工时口径：6–12h，0.5 步进 =====
+    const HOUR_MIN = 6, HOUR_MAX = 12, HOUR_STEP = 0.5;
+    const hourOptions = [];
+    for (let h = HOUR_MIN; h <= HOUR_MAX + 1e-9; h += HOUR_STEP) hourOptions.push(Math.round(h * 10) / 10);
+
+    // 整数部与小数部拆开渲染（仅用于日历格子）：小数位占固定宽度槽位，
+    // 这样 8 与 8.5 的整数部左右对齐，不会形成错位。
+    const hInt = (v) => Math.floor(Number(v) || 0);
+    const hFrac = (v) => (Number(v) || 0) % 1 === 0.5 ? '.5' : '';
+
+    // 仅用于归一「设置里的班次默认工时」，保证默认值落在可选范围内。
+    // 不对已保存的打卡记录做任何改写。
+    const clampHours = (v, fallback) => {
+      const n = Number(v);
+      if (!Number.isFinite(n)) return fallback === undefined ? DEFAULTS.dayHours : fallback;
+      const snapped = Math.round(n / HOUR_STEP) * HOUR_STEP;
+      return Math.min(HOUR_MAX, Math.max(HOUR_MIN, snapped));
+    };
+
+    // ===== 数值兜底：输入框清空 / 脏数据时回落默认值，不让计算变 0 或 NaN =====
+    // 注意 Number(null) 与 Number('') 都等于 0，必须先判空，否则清空输入框会把时薪静默变成 0。
+    const sn = (v, d) => {
+      if (v === null || v === undefined || v === '') return d;
+      const n = Number(v);
+      return Number.isFinite(n) && n >= 0 ? n : d;
+    };
+    const cfg = computed(() => ({
+      rate: sn(settings.rate, DEFAULTS.rate),
+      fullDays: Math.round(sn(settings.fullDays, DEFAULTS.fullDays)) || DEFAULTS.fullDays,
+      fullBonusPerHour: sn(settings.fullBonusPerHour, DEFAULTS.fullBonusPerHour),
+      foundBonus: sn(settings.foundBonus, DEFAULTS.foundBonus),
+      missedPenalty: sn(settings.missedPenalty, DEFAULTS.missedPenalty),
+      cutoff: Math.min(28, Math.max(1, Math.round(sn(settings.cutoff, DEFAULTS.cutoff)))),
+      dayHours: clampHours(sn(settings.dayHours, DEFAULTS.dayHours), DEFAULTS.dayHours),
+      nightHours: clampHours(sn(settings.nightHours, DEFAULTS.nightHours), DEFAULTS.nightHours)
+    }));
+
+    // ===== 页签 =====
+    const tab = ref('calendar');
+    const tabs = [
+      { id: 'calendar', icon: '📅', label: '打卡' },
+      { id: 'summary',  icon: '📊', label: '汇总' },
+      { id: 'settings', icon: '⚙️', label: '设置' }
+    ];
+    const statusOptions = [
+      { id: 'work',  label: '💼 上班' },
+      { id: 'rest',  label: '☕ 休息' },
+      { id: 'leave', label: '📝 请假' }
+    ];
+
+    const today = new Date();
+    const currentYear = ref(today.getFullYear());
+    const currentMonth = ref(today.getMonth());
+    const selectedDay = ref(today.getDate());
+
+    const isDrawerOpen = ref(false);
+    const copied = ref(false);
+    const dataCopied = ref(false);
+    const toast = ref('');
+    const showToast = (msg) => {
+      toast.value = msg;
+      setTimeout(() => { if (toast.value === msg) toast.value = ''; }, 2000);
+    };
+
+    function newDraft(shift) {
+      return {
+        status: 'work',
+        shift_type: shift,
+        hours: shift === 'night' ? cfg.value.nightHours : cfg.value.dayHours,
+        contraband_found: 0,
+        contraband_missed: 0,
+        other_penalty: null,
+        penalty_reason: ''
+      };
+    }
+    const draftRecord = ref(newDraft('day'));
+
+    // ===== 日期辅助 =====
+    const daysInMonth = computed(() => new Date(currentYear.value, currentMonth.value + 1, 0).getDate());
+    const firstDayOfWeek = computed(() => new Date(currentYear.value, currentMonth.value, 1).getDay());
+    const monthPrefix = (y, m) => `${y}-${String(m + 1).padStart(2, '0')}-`;
+    const keyOf = (y, m, d) => monthPrefix(y, m) + String(d).padStart(2, '0');
+    const getRecord = (day) => records.value[keyOf(currentYear.value, currentMonth.value, day)];
+    const prevMonthOf = (y, m) => m === 0 ? { year: y - 1, month: 11 } : { year: y, month: m - 1 };
+    const nextMonthOf = (y, m) => m === 11 ? { year: y + 1, month: 0 } : { year: y, month: m + 1 };
+
+    const isToday = (day) => {
+      const n = new Date();
+      return n.getFullYear() === currentYear.value && n.getMonth() === currentMonth.value && n.getDate() === day;
+    };
+    const isCurrentMonth = computed(() => {
+      const n = new Date();
+      return n.getFullYear() === currentYear.value && n.getMonth() === currentMonth.value;
+    });
+
+    const fmt = (n) => (Number(n) || 0).toFixed(1);
+    const money = (n) => '¥' + (Number(n) || 0).toFixed(1);
+    const signed = (n) => { const v = Number(n) || 0; return (v >= 0 ? '+¥' : '-¥') + Math.abs(v).toFixed(1); };
+
+    // ===== 核心聚合：本月 / 上月共用同一套口径 =====
+    // 夜班跨天：工时全部归入开始打卡的那一天。
+    const aggregateMonth = (year, month) => {
+      const c = cfg.value;
+      const prefix = monthPrefix(year, month);
+      let h1 = 0, h2 = 0, workDays = 0, dayShifts = 0, nightShifts = 0, restDays = 0, leaveDays = 0;
+      let foundCount = 0, missedCount = 0, otherPenalties = 0;
+
+      for (const key in records.value) {
+        if (key.indexOf(prefix) !== 0) continue;
+        const rec = records.value[key];
+        if (!rec) continue;
+        if (rec.status === 'rest') { restDays++; continue; }
+        if (rec.status === 'leave') { leaveDays++; continue; }
+        if (rec.status !== 'work') continue;
+
+        const day = Number(key.slice(prefix.length));
+        const hours = Number(rec.hours || 0);
+        if (day <= c.cutoff) h1 += hours; else h2 += hours;
+
+        workDays++;
+        if (rec.shift_type === 'night') nightShifts++; else dayShifts++;
+        foundCount += Number(rec.contraband_found || 0);
+        missedCount += Number(rec.contraband_missed || 0);
+        otherPenalties += Math.max(0, Number(rec.other_penalty || 0));
+      }
+
+      const totalHours = h1 + h2;
+      // 奖惩池：满勤奖也算奖励，全部挂账，次月初出结果并随次月工资发放
+      const fullBonus = workDays >= c.fullDays ? totalHours * c.fullBonusPerHour : 0;
+      const foundBonus = foundCount * c.foundBonus;
+      const missedPenalty = missedCount * c.missedPenalty;
+      const adjustNet = fullBonus + foundBonus - missedPenalty - otherPenalties;
+
+      return {
+        h1, h2, totalHours, workDays, dayShifts, nightShifts, restDays, leaveDays,
+        foundCount, missedCount, otherPenalties,
+        fullBonus, foundBonus, missedPenalty, adjustNet,
+        basePay: totalHours * c.rate
+      };
+    };
+
+    const prevLabel = computed(() => prevMonthOf(currentYear.value, currentMonth.value));
+    const nextLabel = computed(() => nextMonthOf(currentYear.value, currentMonth.value));
+    const monthStats = computed(() => aggregateMonth(currentYear.value, currentMonth.value));
+    const prevStats = computed(() => aggregateMonth(prevLabel.value.year, prevLabel.value.month));
+
+    // 发放口径：
+    // 当月 payDayA = 当月 1–cutoff 工时 × rate
+    // 当月 payDayB = 上月 cutoff+1–月底 工时 × rate + 上月奖惩净额
+    const payoutThisA = computed(() => Math.max(0, monthStats.value.h1 * cfg.value.rate));
+    const payoutThisB = computed(() => Math.max(0, prevStats.value.h2 * cfg.value.rate + prevStats.value.adjustNet));
+    const payoutNextB = computed(() => Math.max(0, monthStats.value.h2 * cfg.value.rate + monthStats.value.adjustNet));
+
+    const penaltyDetails = computed(() => {
+      const c = cfg.value;
+      const prefix = monthPrefix(currentYear.value, currentMonth.value);
+      const out = [];
+      for (const key in records.value) {
+        if (key.indexOf(prefix) !== 0) continue;
+        const r = records.value[key];
+        if (!r || r.status !== 'work') continue;
+        const missed = Number(r.contraband_missed || 0);
+        const other = Math.max(0, Number(r.other_penalty || 0));
+        const amount = missed * c.missedPenalty + other;
+        if (amount <= 0) continue;
+        const parts = [];
+        if (missed > 0) parts.push(`漏查${missed}件`);
+        if (other > 0) parts.push(r.penalty_reason ? r.penalty_reason : '其他扣款');
+        out.push({ day: Number(key.slice(prefix.length)), reason: parts.join('·'), amount });
+      }
+      return out.sort((a, b) => a.day - b.day);
+    });
+
+    const recordCount = computed(() => Object.keys(records.value).length);
+
+    const hasPenalty = (day) => {
+      const r = getRecord(day);
+      return !!r && r.status === 'work' && (Number(r.contraband_missed || 0) > 0 || Number(r.other_penalty || 0) > 0);
+    };
+
+    const cellClass = (day) => {
+      const r = getRecord(day);
+      const cls = [day <= cfg.value.cutoff ? 'border-l-[3px] border-l-blue-300' : 'border-l-[3px] border-l-violet-300'];
+      if (isToday(day)) cls.push('ring-2 ring-blue-500');
+      if (!r) cls.push('bg-white border-slate-100');
+      else if (r.status === 'work') cls.push('bg-emerald-50/60 border-emerald-100');
+      else if (r.status === 'rest') cls.push('bg-slate-100/70 border-slate-200');
+      else if (r.status === 'leave') cls.push('bg-amber-50/60 border-amber-100');
+      else cls.push('bg-white border-slate-100');
+      return cls;
+    };
+
+    // ===== 交互 =====
+    const changeMonth = (delta) => {
+      const t = delta < 0 ? prevMonthOf(currentYear.value, currentMonth.value) : nextMonthOf(currentYear.value, currentMonth.value);
+      currentYear.value = t.year;
+      currentMonth.value = t.month;
+    };
+    const goToday = () => {
+      const n = new Date();
+      currentYear.value = n.getFullYear();
+      currentMonth.value = n.getMonth();
+    };
+
+    const openDayDrawer = (day) => {
+      selectedDay.value = day;
+      const existing = getRecord(day);
+      draftRecord.value = existing ? JSON.parse(JSON.stringify(existing)) : newDraft('day');
+      isDrawerOpen.value = true;
+    };
+
+    const selectShift = (type) => {
+      draftRecord.value.shift_type = type;
+      draftRecord.value.hours = type === 'night' ? cfg.value.nightHours : cfg.value.dayHours;
+    };
+
+    const persist = () => localStorage.setItem('work_records', JSON.stringify(records.value));
+
+    const saveRecord = () => {
+      const op = Number(draftRecord.value.other_penalty);
+      draftRecord.value.other_penalty = (Number.isFinite(op) && op > 0) ? op : null;
+      if (draftRecord.value.status !== 'work') {
+        draftRecord.value.contraband_found = 0;
+        draftRecord.value.contraband_missed = 0;
+        draftRecord.value.other_penalty = null;
+        draftRecord.value.penalty_reason = '';
+      }
+      records.value[keyOf(currentYear.value, currentMonth.value, selectedDay.value)] = JSON.parse(JSON.stringify(draftRecord.value));
+      persist();
+      isDrawerOpen.value = false;
+      if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(30);
+      showToast('已保存 ' + (currentMonth.value + 1) + '月' + selectedDay.value + '日');
+    };
+
+    const deleteRecord = () => {
+      delete records.value[keyOf(currentYear.value, currentMonth.value, selectedDay.value)];
+      persist();
+      isDrawerOpen.value = false;
+      showToast('已清除该日记录');
+    };
+
+    // ===== 复制 / 导入导出 =====
+    function writeClipboard(text, ok) {
+      const fallback = () => {
+        try {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          ok();
+        } catch (e) { showToast('复制失败，请改用导出'); }
+      };
+      if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(ok).catch(fallback);
+      } else fallback();
+    }
+
+    const buildReport = () => {
+      const s = monthStats.value, p = prevStats.value, c = cfg.value;
+      const m = currentMonth.value + 1, nm = nextLabel.value.month + 1, pm = prevLabel.value.month + 1;
+      return [
+        `${currentYear.value}年${m}月工时薪酬复盘（时薪 ${c.rate} 元/h）`,
+        `出勤 ${s.workDays}/${c.fullDays} 天（白${s.dayShifts}/夜${s.nightShifts}） | 总工时 ${fmt(s.totalHours)}h`,
+        `上半月 ${fmt(s.h1)}h → ${money(s.h1 * c.rate)}　下半月 ${fmt(s.h2)}h → ${money(s.h2 * c.rate)}`,
+        ``,
+        `【本月奖惩·次月${settings.payDayB}号结算】`,
+        `满勤奖 ${s.fullBonus > 0 ? '+' + money(s.fullBonus) : '¥0（未满勤）'}`,
+        `查获 +${money(s.foundBonus)}（${s.foundCount}件） | 漏查 -${money(s.missedPenalty)}（${s.missedCount}件） | 其他 -${money(s.otherPenalties)}`,
+        `奖惩净额 ${signed(s.adjustNet)}`,
+        ``,
+        `【本月到账】`,
+        `${m}月${settings.payDayB}日 ${money(payoutThisB.value)}（${pm}月下半月 ${fmt(p.h2)}h + ${pm}月奖惩 ${signed(p.adjustNet)}）`,
+        `${m}月${settings.payDayA}日 ${money(payoutThisA.value)}（本月上半月 ${fmt(s.h1)}h）`,
+        `合计 ${money(payoutThisB.value + payoutThisA.value)}`,
+        ``,
+        `【${nm}月${settings.payDayB}日预估】${money(payoutNextB.value)}（本月下半月 ${fmt(s.h2)}h + 奖惩 ${signed(s.adjustNet)}）`
+      ].join('\n');
+    };
+
+    const copyReport = () => writeClipboard(buildReport(), () => {
+      copied.value = true;
+      setTimeout(() => copied.value = false, 2000);
+    });
+
+    const bundle = () => JSON.stringify({
+      app: 'work-hours-tracker',
+      version: 2,
+      exportedAt: new Date().toISOString(),
+      settings: { ...settings },
+      records: records.value
+    }, null, 2);
+
+    const exportData = () => {
+      try {
+        const blob = new Blob([bundle()], { type: 'application/json' });
+        const a = document.createElement('a');
+        const d = new Date();
+        a.href = URL.createObjectURL(blob);
+        a.download = `工时备份_${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        showToast('已导出备份文件');
+      } catch (e) { showToast('导出失败：' + e.message); }
+    };
+
+    const copyData = () => writeClipboard(bundle(), () => {
+      dataCopied.value = true;
+      setTimeout(() => dataCopied.value = false, 2000);
+      showToast('数据已复制');
+    });
+
+    const applyImport = (parsed) => {
+      const incoming = parsed && (parsed.records || parsed);
+      if (!incoming || typeof incoming !== 'object') throw new Error('格式不正确');
+      let n = 0;
+      for (const k in incoming) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(k)) continue;
+        records.value[k] = incoming[k];
+        n++;
+      }
+      if (parsed.settings) {
+        for (const k in DEFAULTS) {
+          if (parsed.settings[k] !== undefined) settings[k] = parsed.settings[k];
+        }
+      }
+      persist();
+      return n;
+    };
+
+    const importData = (ev) => {
+      const file = ev.target.files && ev.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const n = applyImport(JSON.parse(reader.result));
+          showToast(n > 0 ? `已导入 ${n} 天记录` : '文件里没有可用记录');
+        } catch (e) { showToast('导入失败：' + e.message); }
+        ev.target.value = '';
+      };
+      reader.readAsText(file);
+    };
+
+    const resetSettings = () => {
+      Object.assign(settings, DEFAULTS);
+      showToast('设置已恢复默认');
+    };
+
+    const clearMonth = () => {
+      const label = `${currentYear.value}年${currentMonth.value + 1}月`;
+      if (!confirm(`确定清空 ${label} 的全部打卡记录？此操作不可撤销。`)) return;
+      const prefix = monthPrefix(currentYear.value, currentMonth.value);
+      let n = 0;
+      for (const k in records.value) if (k.indexOf(prefix) === 0) { delete records.value[k]; n++; }
+      persist();
+      showToast(`已清空 ${label} ${n} 条记录`);
+    };
+
+    const clearAll = () => {
+      if (!confirm('确定清空全部打卡记录？建议先导出备份。此操作不可撤销。')) return;
+      if (!confirm('再次确认：所有月份的记录都会被删除。')) return;
+      records.value = {};
+      persist();
+      showToast('已清空全部记录');
+    };
+
+    // ===== 载入与持久化 =====
+    onMounted(() => {
+      const savedRecords = localStorage.getItem('work_records');
+      if (savedRecords) { try { records.value = JSON.parse(savedRecords) || {}; } catch (e) {} }
+      const savedSettings = localStorage.getItem('work_settings');
+      if (savedSettings) {
+        try {
+          const s = JSON.parse(savedSettings) || {};
+          for (const k in DEFAULTS) if (s[k] !== undefined) settings[k] = s[k];
+        } catch (e) {}
+      }
+    });
+
+    watch(settings, () => localStorage.setItem('work_settings', JSON.stringify({ ...settings })), { deep: true });
+
+    return {
+      settings, cfg, records, recordCount,
+      tab, tabs, statusOptions,
+      currentYear, currentMonth, selectedDay, daysInMonth, firstDayOfWeek,
+      isDrawerOpen, draftRecord, hourOptions,
+      HOUR_MIN, HOUR_MAX, HOUR_STEP, hInt, hFrac, clampHours,
+      copied, dataCopied, toast,
+      monthStats, prevStats, prevLabel, nextLabel,
+      payoutThisA, payoutThisB, payoutNextB, penaltyDetails,
+      fmt, money, signed, buildReport, applyImport,
+      isToday, isCurrentMonth, getRecord, hasPenalty, cellClass,
+      changeMonth, goToday, openDayDrawer, selectShift,
+      saveRecord, deleteRecord, copyReport,
+      exportData, copyData, importData, resetSettings, clearMonth, clearAll
+    };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>
