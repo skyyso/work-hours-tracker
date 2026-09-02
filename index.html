@@ -7,9 +7,67 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
   <style>
+    /* ===== 设计令牌（与 Tailwind 默认色板一一对应，便于两种写法混用） ===== */
+    :root {
+      --ink:    #1E293B;  /* 主色·深黛蓝   = slate-800  */
+      --accent: #4F46E5;  /* 强调·靛蓝     = indigo-600 */
+      --pos-bg: #ECFDF5;  /* 正向·薄荷底   = emerald-50 */
+      --pos-fg: #059669;  /* 正向·翡翠字   = emerald-600 */
+      --neg-bg: #FFF1F2;  /* 负向·玫瑰底   = rose-50    */
+      --neg-fg: #E11D48;  /* 负向·玫瑰字   = rose-600   */
+      --page:   #F8FAFC;  /* 页面底色      = slate-50   */
+      --line:   #F1F5F9;  /* 卡片描边      = slate-100  */
+    }
+
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    body { -webkit-tap-highlight-color: transparent; }
+
+    body {
+      -webkit-tap-highlight-color: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                   "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    /* 等宽数字：账单上下对齐，数值刷新时不左右跳动 */
+    .font-mono-num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+
+    /* 统一卡片：16px 圆角 + 极柔和弥散阴影 */
+    .card {
+      border-radius: 16px;
+      background: #ffffff;
+      border: 1px solid var(--line);
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, .05), 0 1px 2px -1px rgba(0, 0, 0, .05);
+    }
+
+    /* Lucide 线性图标：尺寸由自身 font-size 决定（用 Tailwind text-· 类控制），
+       避免和 Tailwind 的宽高工具类抢层叠顺序。
+       注意：注释里不能出现星号加斜杠，否则会提前闭合注释、把下面整条规则吃掉。 */
+    .ico {
+      width: 1em; height: 1em; flex: none;
+      display: inline-block; vertical-align: -.125em;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* 上下半月分界：沿网格底缘描出柔和虚线。
+       不单独插一行分割元素，那会把下半月推到新行开头、搞乱星期对齐。
+       Tailwind CDN 运行时注入的样式可能排在本文件之后，所以用 !important 压住单边颜色。 */
+    .cut-edge { border-bottom: 2px dashed rgba(148, 163, 184, .55) !important; }
+
+    /* 半透明胶囊标签（挂在深色看板上） */
+    .pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: rgba(255, 255, 255, .14);
+      border: 1px solid rgba(255, 255, 255, .16);
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 11px; line-height: 1.25; font-weight: 600;
+      white-space: nowrap;
+    }
+
     .drawer-enter-active, .drawer-leave-active { transition: transform .25s cubic-bezier(.16,1,.3,1), opacity .25s ease; }
     .drawer-enter-from, .drawer-leave-to { transform: translateY(100%); opacity: 0; }
     .fade-enter-active, .fade-leave-active { transition: opacity .15s ease; }
@@ -19,38 +77,88 @@
 </head>
 <body class="bg-slate-200">
 
+<!-- ===== Lucide 图标 sprite（内联，无外部依赖；描边由 .ico 统一给 1.5） ===== -->
+<svg id="sprite" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
+<symbol id="i-award" viewBox="0 0 24 24"><path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526" /><circle cx="12" cy="8" r="6" /></symbol>
+<symbol id="i-briefcase" viewBox="0 0 24 24"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /><rect width="20" height="14" x="2" y="6" rx="2" /></symbol>
+<symbol id="i-calendar-clock" viewBox="0 0 24 24"><path d="M16 14v2.2l1.6 1" /><path d="M16 2v4" /><path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5" /><path d="M3 10h5" /><path d="M8 2v4" /><circle cx="16" cy="16" r="6" /></symbol>
+<symbol id="i-calendar-days" viewBox="0 0 24 24"><path d="M8 2v4" /><path d="M16 2v4" /><rect width="18" height="18" x="3" y="4" rx="2" /><path d="M3 10h18" /><path d="M8 14h.01" /><path d="M12 14h.01" /><path d="M16 14h.01" /><path d="M8 18h.01" /><path d="M12 18h.01" /><path d="M16 18h.01" /></symbol>
+<symbol id="i-chart-column" viewBox="0 0 24 24"><path d="M3 3v16a2 2 0 0 0 2 2h16" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol>
+<symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></symbol>
+<symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><path d="M12 6v6l4 2" /><circle cx="12" cy="12" r="10" /></symbol>
+<symbol id="i-coffee" viewBox="0 0 24 24"><path d="M10 2v2" /><path d="M14 2v2" /><path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1" /><path d="M6 2v2" /></symbol>
+<symbol id="i-coins" viewBox="0 0 24 24"><circle cx="8" cy="8" r="6" /><path d="M18.09 10.37A6 6 0 1 1 10.34 18" /><path d="M7 6h1v4" /><path d="m16.71 13.88.7.71-2.82 2.82" /></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></symbol>
+<symbol id="i-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M3 5V19A9 3 0 0 0 21 19V5" /><path d="M3 12A9 3 0 0 0 21 12" /></symbol>
+<symbol id="i-download" viewBox="0 0 24 24"><path d="M12 15V3" /><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m7 10 5 5 5-5" /></symbol>
+<symbol id="i-hourglass" viewBox="0 0 24 24"><path d="M5 22h14" /><path d="M5 2h14" /><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22" /><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2" /></symbol>
+<symbol id="i-lightbulb" viewBox="0 0 24 24"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" /><path d="M9 18h6" /><path d="M10 22h4" /></symbol>
+<symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14" /></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" /></symbol>
+<symbol id="i-notebook-pen" viewBox="0 0 24 24"><path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4" /><path d="M2 6h4" /><path d="M2 10h4" /><path d="M2 14h4" /><path d="M2 18h4" /><path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z" /></symbol>
+<symbol id="i-party-popper" viewBox="0 0 24 24"><path d="M5.8 11.3 2 22l10.7-3.79" /><path d="M4 3h.01" /><path d="M22 8h.01" /><path d="M15 2h.01" /><path d="M22 20h.01" /><path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10" /><path d="m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11c-.11.7-.72 1.22-1.43 1.22H17" /><path d="m11 2 .33.82c.34.86-.2 1.82-1.11 1.98C9.52 4.9 9 5.52 9 6.23V7" /><path d="M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z" /></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14" /><path d="M12 5v14" /></symbol>
+<symbol id="i-rotate-ccw" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></symbol>
+<symbol id="i-settings" viewBox="0 0 24 24"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" /><circle cx="12" cy="12" r="3" /></symbol>
+<symbol id="i-shield-alert" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /><path d="M12 8v4" /><path d="M12 16h.01" /></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></symbol>
+<symbol id="i-trash-2" viewBox="0 0 24 24"><path d="M10 11v6" /><path d="M14 11v6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><path d="M3 6h18" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></symbol>
+<symbol id="i-triangle-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /><path d="M12 9v4" /><path d="M12 17h.01" /></symbol>
+<symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 3v12" /><path d="m17 8-5-5-5 5" /><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /></symbol>
+<symbol id="i-wallet" viewBox="0 0 24 24"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1" /><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4" /></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></symbol>
+</svg>
+
 <div id="app" class="max-w-md mx-auto min-h-screen bg-slate-50 flex flex-col shadow-xl relative">
 
-  <!-- ===== 顶部栏 ===== -->
-  <header class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-5 pt-5 pb-4 rounded-b-3xl shadow-md shrink-0">
+  <!-- ===== 顶部资产看板 ===== -->
+  <header class="text-white px-5 pt-5 pb-5 rounded-b-3xl shadow-lg shrink-0 relative overflow-hidden"
+    style="background-image: radial-gradient(125% 125% at 85% -10%, #6366F1 0%, rgba(99,102,241,0) 58%), linear-gradient(135deg, #1E293B 0%, #312E81 56%, #4F46E5 100%);">
     <!-- 月份切换（日历/汇总） -->
     <div v-if="tab !== 'settings'" class="flex justify-between items-center">
       <div class="flex items-center space-x-1">
-        <button @click="changeMonth(-1)" class="w-7 h-7 rounded-full hover:bg-white/20 active:scale-90 transition text-sm">◀</button>
-        <span class="text-base font-bold tracking-wide">{{ currentYear }}年{{ currentMonth + 1 }}月</span>
-        <button @click="changeMonth(1)" class="w-7 h-7 rounded-full hover:bg-white/20 active:scale-90 transition text-sm">▶</button>
+        <button @click="changeMonth(-1)" class="w-7 h-7 rounded-full hover:bg-white/20 active:scale-90 transition flex items-center justify-center"><svg class="ico text-base"><use href="#i-chevron-left" /></svg></button>
+        <span class="text-base font-bold tracking-wide font-mono-num">{{ currentYear }}年{{ currentMonth + 1 }}月</span>
+        <button @click="changeMonth(1)" class="w-7 h-7 rounded-full hover:bg-white/20 active:scale-90 transition flex items-center justify-center"><svg class="ico text-base"><use href="#i-chevron-right" /></svg></button>
       </div>
-      <button v-if="!isCurrentMonth" @click="goToday" class="text-[11px] bg-white/20 px-2.5 py-1 rounded-full font-medium active:scale-95 transition">回今天</button>
-      <span v-else class="text-[11px] text-blue-200">{{ tab === 'calendar' ? '打卡' : '汇总' }}</span>
+      <button v-if="!isCurrentMonth" @click="goToday" class="pill active:scale-95 transition">回今天</button>
+      <span v-else class="text-[11px] text-indigo-100/70 font-medium">{{ tab === 'calendar' ? '打卡' : '汇总' }}</span>
     </div>
     <!-- 设置页标题 -->
     <div v-else class="flex items-center h-7">
-      <span class="text-base font-bold tracking-wide">⚙️ 设置</span>
+      <span class="text-base font-bold tracking-wide flex items-center gap-1.5"><svg class="ico text-[17px]"><use href="#i-settings" /></svg>设置</span>
     </div>
 
-    <!-- 三格概览（仅日历页） -->
-    <div v-if="tab === 'calendar'" class="grid grid-cols-3 gap-2 mt-3.5 text-center">
-      <div class="bg-white/10 rounded-xl py-2">
-        <p class="text-[10px] text-blue-100">出勤</p>
-        <p class="text-base font-black leading-tight">{{ monthStats.workDays }}<span class="text-[10px] font-normal">/{{ settings.fullDays }}</span></p>
-      </div>
-      <div class="bg-white/10 rounded-xl py-2">
-        <p class="text-[10px] text-blue-100">总工时</p>
-        <p class="text-base font-black leading-tight">{{ fmt(monthStats.totalHours) }}<span class="text-[10px] font-normal">h</span></p>
-      </div>
-      <div class="bg-white/10 rounded-xl py-2">
-        <p class="text-[10px] text-blue-100">工时收入</p>
-        <p class="text-base font-black text-amber-300 leading-tight">{{ money(monthStats.basePay) }}</p>
+    <!-- 主数字：本月预计到账（仅日历页）。¥ 与小数位缩小，整数部放大，形成阶梯感 -->
+    <div v-if="tab === 'calendar'" class="mt-4">
+      <p class="text-[11px] text-indigo-100/70 font-medium flex items-center gap-1.5">
+        <svg class="ico text-[13px]"><use href="#i-wallet" /></svg>{{ currentMonth + 1 }}月预计到账
+      </p>
+      <p class="mt-1 flex items-end font-mono-num leading-none">
+        <span class="text-base font-bold text-indigo-100/80 mb-[3px] mr-0.5">¥</span>
+        <span class="text-[32px] font-bold tracking-tight">{{ boardMain.int }}</span>
+        <span class="text-base font-bold text-indigo-100/80 mb-[3px]">{{ boardMain.frac }}</span>
+      </p>
+      <p class="mt-1.5 text-[10px] text-indigo-100/60 font-mono-num">
+        {{ settings.payDayB }}日 {{ money(payoutThisB) }} · {{ settings.payDayA }}日 {{ money(payoutThisA) }}
+      </p>
+
+      <!-- 半透明胶囊标签 -->
+      <div class="mt-3.5 flex flex-wrap gap-1.5">
+        <span class="pill">
+          <svg class="ico text-[12px] text-indigo-200"><use href="#i-briefcase" /></svg>
+          出勤 <b class="font-mono-num font-bold">{{ monthStats.workDays }}</b><span class="text-indigo-100/60">/{{ settings.fullDays }}</span>
+        </span>
+        <span class="pill">
+          <svg class="ico text-[12px] text-indigo-200"><use href="#i-clock" /></svg>
+          工时 <b class="font-mono-num font-bold">{{ fmt(monthStats.totalHours) }}</b><span class="text-indigo-100/60">h</span>
+        </span>
+        <span class="pill">
+          <svg class="ico text-[12px] text-indigo-200"><use href="#i-coins" /></svg>
+          工时收入 <b class="font-mono-num font-bold text-amber-200">{{ money(monthStats.basePay) }}</b>
+        </span>
       </div>
     </div>
   </header>
@@ -64,79 +172,86 @@
         <span class="text-rose-400">日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span class="text-indigo-400">六</span>
       </div>
 
-      <div class="grid grid-cols-7 gap-1">
+      <div class="grid grid-cols-7 gap-1.5">
         <div v-for="b in firstDayOfWeek" :key="'b'+b" class="h-[64px]"></div>
 
         <div v-for="day in daysInMonth" :key="day" @click="openDayDrawer(day)"
-          class="h-[64px] rounded-lg p-1 flex flex-col justify-between border relative active:scale-95 transition cursor-pointer overflow-hidden"
+          class="h-[64px] rounded-xl p-1 flex flex-col justify-between border relative active:scale-95 transition cursor-pointer overflow-hidden"
           :class="cellClass(day)">
           <div class="flex justify-between items-start">
-            <span class="text-[11px] font-bold leading-none tabular-nums" :class="isToday(day) ? 'text-blue-600' : 'text-slate-500'">{{ day }}</span>
-            <span class="flex space-x-0.5">
+            <!-- 今天：品牌色实心圆标 -->
+            <span v-if="isToday(day)" class="w-[17px] h-[17px] rounded-full bg-indigo-600 text-white text-[10px] font-bold flex items-center justify-center font-mono-num shrink-0">{{ day }}</span>
+            <span v-else class="text-[11px] font-bold leading-none font-mono-num text-slate-500 pl-1 pt-1">{{ day }}</span>
+            <span class="flex space-x-0.5 pt-1 pr-0.5">
               <span v-if="getRecord(day)?.status === 'work' && getRecord(day)?.contraband_found > 0" class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
               <span v-if="hasPenalty(day)" class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
             </span>
           </div>
           <!-- 徽章统一撑满格宽、统一高度：班次靠左、工时靠右，小数位占固定槽位，整数与 .5 不会错位 -->
           <template v-if="getRecord(day)?.status === 'work'">
-            <span class="flex items-center justify-between w-full px-1 py-[3px] rounded text-[10px] font-bold leading-none"
-              :class="getRecord(day).shift_type === 'day' ? 'bg-blue-100 text-blue-700' : 'bg-violet-100 text-violet-700'">
+            <span class="flex items-center justify-between w-full px-1.5 py-[3px] rounded-md text-[10px] font-bold leading-none"
+              :class="getRecord(day).shift_type === 'day' ? 'bg-sky-100 text-sky-700' : 'bg-violet-100 text-violet-700'">
               <span>{{ getRecord(day).shift_type === 'day' ? '白' : '夜' }}</span>
-              <span class="tabular-nums">{{ hInt(getRecord(day).hours) }}<span class="inline-block w-[8px] text-left">{{ hFrac(getRecord(day).hours) }}</span></span>
+              <span class="font-mono-num">{{ hInt(getRecord(day).hours) }}<span class="inline-block w-[8px] text-left">{{ hFrac(getRecord(day).hours) }}</span></span>
             </span>
           </template>
-          <span v-else-if="getRecord(day)?.status === 'rest'" class="block w-full px-1 py-[3px] rounded text-[10px] font-bold leading-none text-center bg-slate-200/70 text-slate-500">休</span>
-          <span v-else-if="getRecord(day)?.status === 'leave'" class="block w-full px-1 py-[3px] rounded text-[10px] font-bold leading-none text-center bg-amber-100 text-amber-700">假</span>
+          <span v-else-if="getRecord(day)?.status === 'rest'" class="block w-full px-1.5 py-[3px] rounded-md text-[10px] font-bold leading-none text-center bg-slate-200/80 text-slate-500">休</span>
+          <span v-else-if="getRecord(day)?.status === 'leave'" class="block w-full px-1.5 py-[3px] rounded-md text-[10px] font-bold leading-none text-center bg-amber-100 text-amber-700">假</span>
           <span v-else class="block w-full px-1 py-[3px] text-[10px] leading-none text-center text-slate-300">—</span>
         </div>
       </div>
 
-      <div class="mt-3 flex items-center justify-center space-x-3 text-[10px] text-slate-400">
-        <span class="flex items-center space-x-1"><i class="w-1.5 h-3 rounded-sm bg-blue-300 inline-block"></i><span>1–{{ settings.cutoff }}日 → {{ settings.payDayA }}号发</span></span>
-        <span class="flex items-center space-x-1"><i class="w-1.5 h-3 rounded-sm bg-violet-300 inline-block"></i><span>{{ settings.cutoff + 1 }}日– → 次月{{ settings.payDayB }}号发</span></span>
+      <!-- 虚线含义说明（取代原来两行带色条的长文本图例） -->
+      <div class="mt-3.5 flex items-center justify-center gap-2 text-[10px] text-slate-400">
+        <span class="inline-flex items-center gap-1.5">
+          <span class="w-4 border-t-2 border-dashed border-slate-300 inline-block"></span>
+          <span>线上 → 当月<b class="font-mono-num font-semibold text-slate-500">{{ settings.payDayA }}</b>号发</span>
+        </span>
+        <span class="text-slate-200">·</span>
+        <span>线下 → 次月<b class="font-mono-num font-semibold text-slate-500">{{ settings.payDayB }}</b>号发</span>
       </div>
 
-      <p class="mt-2 text-center text-[10px] text-slate-400">奖励与处罚统一在次月{{ settings.payDayB }}号结算</p>
+      <p class="mt-1.5 text-center text-[10px] text-slate-300">奖励与处罚统一在次月{{ settings.payDayB }}号结算</p>
     </section>
 
     <!-- ========== ② 汇总 ========== -->
-    <section v-show="tab === 'summary'" class="p-4 space-y-3">
+    <section v-show="tab === 'summary'" class="px-4 py-4 space-y-3.5">
 
       <!-- 本月到账 -->
-      <div class="bg-white rounded-2xl border border-slate-200/70 shadow-sm overflow-hidden">
-        <div class="px-4 py-2.5 border-b border-slate-100 flex items-center justify-between">
-          <span class="text-xs font-bold text-slate-700">💳 本月到账</span>
+      <div class="card overflow-hidden">
+        <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5"><svg class="ico text-[15px] text-indigo-600"><use href="#i-wallet" /></svg>本月到账</span>
           <span class="text-[10px] text-slate-400">时薪 {{ settings.rate }} 元/h</span>
         </div>
         <div class="divide-y divide-slate-100">
-          <div class="flex items-center justify-between px-4 py-3">
+          <div class="flex items-center justify-between px-5 py-3.5">
             <div class="min-w-0 pr-2">
               <p class="text-xs font-bold text-slate-700">{{ currentMonth + 1 }}月{{ settings.payDayB }}日</p>
               <p class="text-[10px] text-slate-400 mt-0.5">{{ prevLabel.month + 1 }}月下半月 {{ fmt(prevStats.h2) }}h + 奖惩 {{ signed(prevStats.adjustNet) }}</p>
             </div>
             <span class="text-base font-black text-slate-800 shrink-0">{{ money(payoutThisB) }}</span>
           </div>
-          <div class="flex items-center justify-between px-4 py-3">
+          <div class="flex items-center justify-between px-5 py-3.5">
             <div class="min-w-0 pr-2">
               <p class="text-xs font-bold text-slate-700">{{ currentMonth + 1 }}月{{ settings.payDayA }}日</p>
               <p class="text-[10px] text-slate-400 mt-0.5">本月上半月 {{ fmt(monthStats.h1) }}h · 纯工时</p>
             </div>
             <span class="text-base font-black text-slate-800 shrink-0">{{ money(payoutThisA) }}</span>
           </div>
-          <div class="flex items-center justify-between px-4 py-2.5 bg-slate-50">
+          <div class="flex items-center justify-between px-5 py-3 bg-slate-50">
             <span class="text-xs font-bold text-slate-500">本月现金流合计</span>
-            <span class="text-lg font-black text-blue-600">{{ money(payoutThisB + payoutThisA) }}</span>
+            <span class="text-lg font-bold text-indigo-600 font-mono-num">{{ money(payoutThisB + payoutThisA) }}</span>
           </div>
         </div>
       </div>
 
       <!-- 本月工时 -->
-      <div class="bg-white rounded-2xl border border-slate-200/70 shadow-sm p-4">
-        <p class="text-xs font-bold text-slate-700 mb-3">⏱ 本月工时</p>
+      <div class="card px-5 py-4">
+        <p class="text-xs font-bold text-slate-700 mb-3 flex items-center gap-1.5"><svg class="ico text-[15px] text-indigo-600"><use href="#i-clock" /></svg>本月工时</p>
         <div class="grid grid-cols-2 gap-2 mb-3">
-          <div class="bg-blue-50/60 rounded-xl p-2.5 border border-blue-100/70">
-            <p class="text-[10px] text-blue-700/70">上半月 1–{{ settings.cutoff }}日</p>
-            <p class="text-sm font-black text-blue-700 mt-0.5">{{ fmt(monthStats.h1) }}h</p>
+          <div class="bg-sky-50/70 rounded-xl p-2.5 border border-sky-100">
+            <p class="text-[10px] text-sky-700/80">上半月 1–{{ settings.cutoff }}日</p>
+            <p class="text-sm font-bold text-sky-700 mt-0.5 font-mono-num">{{ fmt(monthStats.h1) }}h</p>
             <p class="text-[10px] text-slate-400">{{ money(monthStats.h1 * settings.rate) }}</p>
           </div>
           <div class="bg-violet-50/60 rounded-xl p-2.5 border border-violet-100/70">
@@ -153,9 +268,9 @@
       </div>
 
       <!-- 本月奖惩（挂账） -->
-      <div class="bg-white rounded-2xl border border-slate-200/70 shadow-sm p-4">
+      <div class="card px-5 py-4">
         <div class="flex items-center justify-between mb-1">
-          <p class="text-xs font-bold text-slate-700">🎯 本月奖惩</p>
+          <p class="text-xs font-bold text-slate-700 flex items-center gap-1.5"><svg class="ico text-[15px] text-indigo-600"><use href="#i-award" /></svg>本月奖惩</p>
           <span class="text-[10px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">次月{{ settings.payDayB }}号结算</span>
         </div>
         <p class="text-[10px] text-slate-400 mb-2.5">以下金额不计入当月工资</p>
@@ -200,19 +315,19 @@
           <div class="flex justify-between"><span>本月下半月工时 {{ fmt(monthStats.h2) }}h</span><span>{{ money(monthStats.h2 * settings.rate) }}</span></div>
           <div class="flex justify-between"><span>本月奖惩结算</span><span>{{ signed(monthStats.adjustNet) }}</span></div>
         </div>
-        <p v-if="monthStats.h2 * settings.rate + monthStats.adjustNet < 0" class="mt-2 text-[10px] text-rose-600 font-bold">⚠️ 处罚已超过下半月工时收入，实发按 ¥0 计，差额可能顺延</p>
+        <p v-if="monthStats.h2 * settings.rate + monthStats.adjustNet < 0" class="mt-2 text-[10px] text-rose-600 font-bold flex items-start gap-1"><svg class="ico text-[13px] mt-px"><use href="#i-triangle-alert" /></svg><span>处罚已超过下半月工时收入，实发按 ¥0 计，差额可能顺延</p>
       </div>
 
       <!-- 诊断 -->
-      <div class="bg-white rounded-2xl border border-slate-200/70 shadow-sm p-4">
-        <p class="text-xs font-bold text-slate-700 mb-2">💡 诊断</p>
+      <div class="card px-5 py-4">
+        <p class="text-xs font-bold text-slate-700 mb-2 flex items-center gap-1.5"><svg class="ico text-[15px] text-indigo-600"><use href="#i-lightbulb" /></svg>诊断</p>
         <div class="space-y-1.5 text-[11px] leading-relaxed">
           <p v-if="monthStats.workDays === 0" class="text-slate-400">本月还没有打卡记录。</p>
           <template v-else>
             <p v-if="monthStats.workDays < settings.fullDays" class="text-slate-600">
               距离满勤还差 <b class="text-slate-800">{{ settings.fullDays - monthStats.workDays }} 天</b>，达成可得满勤奖约 <b class="text-emerald-700">{{ money(monthStats.totalHours * settings.fullBonusPerHour) }}</b>（{{ nextLabel.month + 1 }}月{{ settings.payDayB }}号发）。
             </p>
-            <p v-else class="text-emerald-700">🎉 已达成 {{ settings.fullDays }} 天满勤，满勤奖 <b>+{{ money(monthStats.fullBonus) }}</b> 将于 {{ nextLabel.month + 1 }}月{{ settings.payDayB }}号发放。</p>
+            <p v-else class="text-emerald-600 flex items-start gap-1"><svg class="ico text-[13px] mt-px shrink-0"><use href="#i-party-popper" /></svg><span>已达成 {{ settings.fullDays }} 天满勤，满勤奖 <b>+{{ money(monthStats.fullBonus) }}</b> 将于 {{ nextLabel.month + 1 }}月{{ settings.payDayB }}号发放。</span></p>
             <p v-if="monthStats.missedCount > 0" class="text-slate-600">
               本月 {{ monthStats.missedCount }} 次漏查，将扣 <b class="text-rose-600">{{ money(monthStats.missedPenalty) }}</b>，约等于白干 {{ fmt(monthStats.missedPenalty / settings.rate) }} 小时。
             </p>
@@ -220,99 +335,99 @@
         </div>
       </div>
 
-      <button @click="copyReport" class="w-full py-3 bg-slate-800 text-white rounded-2xl text-xs font-bold active:scale-95 transition shadow-sm">
-        {{ copied ? '✓ 已复制到剪贴板' : '复制文本报告' }}
+      <button @click="copyReport" class="w-full py-3 bg-slate-800 text-white rounded-2xl text-xs font-bold active:scale-95 transition shadow-sm flex items-center justify-center gap-1.5">
+        <svg class="ico text-[15px]"><use :href="copied ? '#i-check' : '#i-copy'" /></svg>{{ copied ? '已复制到剪贴板' : '复制文本报告' }}
       </button>
     </section>
 
     <!-- ========== ③ 设置 ========== -->
-    <section v-show="tab === 'settings'" class="p-4 space-y-3">
+    <section v-show="tab === 'settings'" class="px-4 py-4 space-y-3.5">
 
-      <div class="bg-white rounded-2xl border border-slate-200/70 shadow-sm overflow-hidden">
-        <p class="px-4 py-2.5 text-xs font-bold text-slate-700 bg-slate-50 border-b border-slate-100">💰 薪酬规则</p>
+      <div class="card overflow-hidden">
+        <p class="px-5 py-3 text-xs font-bold text-slate-700 bg-slate-50 border-b border-slate-100 flex items-center gap-1.5"><svg class="ico text-[15px] text-indigo-600"><use href="#i-coins" /></svg>薪酬规则</p>
         <div class="divide-y divide-slate-100">
-          <label class="flex items-center justify-between px-4 py-2.5">
+          <label class="flex items-center justify-between px-5 py-3">
             <span class="text-xs text-slate-600">基础时薪（元/h）</span>
-            <input type="number" step="0.5" min="0" v-model.number="settings.rate" class="w-24 text-right text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-blue-500" />
+            <input type="number" step="0.5" min="0" v-model.number="settings.rate" class="w-24 text-right text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-indigo-500" />
           </label>
-          <label class="flex items-center justify-between px-4 py-2.5">
+          <label class="flex items-center justify-between px-5 py-3">
             <span class="text-xs text-slate-600">满勤天数（天）</span>
-            <input type="number" step="1" min="1" max="31" v-model.number="settings.fullDays" class="w-24 text-right text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-blue-500" />
+            <input type="number" step="1" min="1" max="31" v-model.number="settings.fullDays" class="w-24 text-right text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-indigo-500" />
           </label>
-          <label class="flex items-center justify-between px-4 py-2.5">
+          <label class="flex items-center justify-between px-5 py-3">
             <span class="text-xs text-slate-600">满勤奖（元/工时）</span>
-            <input type="number" step="0.5" min="0" v-model.number="settings.fullBonusPerHour" class="w-24 text-right text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-blue-500" />
+            <input type="number" step="0.5" min="0" v-model.number="settings.fullBonusPerHour" class="w-24 text-right text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-indigo-500" />
           </label>
         </div>
-        <p class="px-4 py-2.5 text-[10px] text-slate-400 bg-slate-50/70 leading-relaxed">满勤奖按「当月总工时 × 单价」计算，属于奖励，不并入当月工资。</p>
+        <p class="px-5 py-3 text-[10px] text-slate-400 bg-slate-50/70 leading-relaxed">满勤奖按「当月总工时 × 单价」计算，属于奖励，不并入当月工资。</p>
       </div>
 
-      <div class="bg-white rounded-2xl border border-slate-200/70 shadow-sm overflow-hidden">
-        <p class="px-4 py-2.5 text-xs font-bold text-slate-700 bg-slate-50 border-b border-slate-100">🎯 奖惩标准</p>
+      <div class="card overflow-hidden">
+        <p class="px-5 py-3 text-xs font-bold text-slate-700 bg-slate-50 border-b border-slate-100 flex items-center gap-1.5"><svg class="ico text-[15px] text-indigo-600"><use href="#i-shield-alert" /></svg>奖惩标准</p>
         <div class="divide-y divide-slate-100">
-          <label class="flex items-center justify-between px-4 py-2.5">
+          <label class="flex items-center justify-between px-5 py-3">
             <span class="text-xs text-slate-600">查获违禁品（元/件）</span>
-            <input type="number" step="1" min="0" v-model.number="settings.foundBonus" class="w-24 text-right text-xs font-bold text-emerald-700 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-blue-500" />
+            <input type="number" step="1" min="0" v-model.number="settings.foundBonus" class="w-24 text-right text-xs font-bold text-emerald-700 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-indigo-500" />
           </label>
-          <label class="flex items-center justify-between px-4 py-2.5">
+          <label class="flex items-center justify-between px-5 py-3">
             <span class="text-xs text-slate-600">漏查违禁品（元/件）</span>
-            <input type="number" step="1" min="0" v-model.number="settings.missedPenalty" class="w-24 text-right text-xs font-bold text-rose-600 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-blue-500" />
+            <input type="number" step="1" min="0" v-model.number="settings.missedPenalty" class="w-24 text-right text-xs font-bold text-rose-600 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-indigo-500" />
           </label>
         </div>
       </div>
 
-      <div class="bg-white rounded-2xl border border-slate-200/70 shadow-sm overflow-hidden">
-        <p class="px-4 py-2.5 text-xs font-bold text-slate-700 bg-slate-50 border-b border-slate-100">📅 发放周期</p>
+      <div class="card overflow-hidden">
+        <p class="px-5 py-3 text-xs font-bold text-slate-700 bg-slate-50 border-b border-slate-100 flex items-center gap-1.5"><svg class="ico text-[15px] text-indigo-600"><use href="#i-calendar-clock" /></svg>发放周期</p>
         <div class="divide-y divide-slate-100">
-          <label class="flex items-center justify-between px-4 py-2.5">
+          <label class="flex items-center justify-between px-5 py-3">
             <span class="text-xs text-slate-600">上半月截止日</span>
-            <input type="number" step="1" min="1" max="28" v-model.number="settings.cutoff" class="w-24 text-right text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-blue-500" />
+            <input type="number" step="1" min="1" max="28" v-model.number="settings.cutoff" class="w-24 text-right text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-indigo-500" />
           </label>
-          <label class="flex items-center justify-between px-4 py-2.5">
+          <label class="flex items-center justify-between px-5 py-3">
             <span class="text-xs text-slate-600">上半月发放日（当月）</span>
-            <input type="number" step="1" min="1" max="31" v-model.number="settings.payDayA" class="w-24 text-right text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-blue-500" />
+            <input type="number" step="1" min="1" max="31" v-model.number="settings.payDayA" class="w-24 text-right text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-indigo-500" />
           </label>
-          <label class="flex items-center justify-between px-4 py-2.5">
+          <label class="flex items-center justify-between px-5 py-3">
             <span class="text-xs text-slate-600">下半月发放日（次月）</span>
-            <input type="number" step="1" min="1" max="31" v-model.number="settings.payDayB" class="w-24 text-right text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-blue-500" />
+            <input type="number" step="1" min="1" max="31" v-model.number="settings.payDayB" class="w-24 text-right text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-indigo-500" />
           </label>
         </div>
-        <p class="px-4 py-2.5 text-[10px] text-slate-400 bg-slate-50/70 leading-relaxed">
+        <p class="px-5 py-3 text-[10px] text-slate-400 bg-slate-50/70 leading-relaxed">
           1–{{ settings.cutoff }}日工时 → 当月{{ settings.payDayA }}号发；{{ settings.cutoff + 1 }}日–月底工时 + 当月奖惩 → 次月{{ settings.payDayB }}号一起发。
         </p>
       </div>
 
-      <div class="bg-white rounded-2xl border border-slate-200/70 shadow-sm overflow-hidden">
-        <p class="px-4 py-2.5 text-xs font-bold text-slate-700 bg-slate-50 border-b border-slate-100">🕐 班次默认工时</p>
+      <div class="card overflow-hidden">
+        <p class="px-5 py-3 text-xs font-bold text-slate-700 bg-slate-50 border-b border-slate-100 flex items-center gap-1.5"><svg class="ico text-[15px] text-indigo-600"><use href="#i-hourglass" /></svg>班次默认工时</p>
         <div class="divide-y divide-slate-100">
-          <label class="flex items-center justify-between px-4 py-2.5">
-            <span class="text-xs text-slate-600">☀️ 白班默认（h）</span>
-            <input type="number" step="0.5" min="0" max="24" v-model.number="settings.dayHours" class="w-24 text-right text-xs font-bold text-blue-700 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-blue-500" />
+          <label class="flex items-center justify-between px-5 py-3">
+            <span class="text-xs text-slate-600 flex items-center gap-1.5"><svg class="ico text-[14px] text-amber-500"><use href="#i-sun" /></svg>白班默认（h）</span>
+            <input type="number" step="0.5" min="0" max="24" v-model.number="settings.dayHours" class="w-24 text-right text-xs font-bold text-sky-700 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-indigo-500 font-mono-num" />
           </label>
-          <label class="flex items-center justify-between px-4 py-2.5">
-            <span class="text-xs text-slate-600">🌙 夜班默认（h）</span>
-            <input type="number" step="0.5" min="0" max="24" v-model.number="settings.nightHours" class="w-24 text-right text-xs font-bold text-violet-700 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-blue-500" />
+          <label class="flex items-center justify-between px-5 py-3">
+            <span class="text-xs text-slate-600 flex items-center gap-1.5"><svg class="ico text-[14px] text-violet-500"><use href="#i-moon" /></svg>夜班默认（h）</span>
+            <input type="number" step="0.5" min="0" max="24" v-model.number="settings.nightHours" class="w-24 text-right text-xs font-bold text-violet-700 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-indigo-500 font-mono-num" />
           </label>
         </div>
-        <p class="px-4 py-2.5 text-[10px] text-slate-400 bg-slate-50/70">夜班跨天，工时全部归入开始打卡的那一天。</p>
+        <p class="px-5 py-3 text-[10px] text-slate-400 bg-slate-50/70">夜班跨天，工时全部归入开始打卡的那一天。</p>
       </div>
 
-      <div class="bg-white rounded-2xl border border-slate-200/70 shadow-sm overflow-hidden">
-        <p class="px-4 py-2.5 text-xs font-bold text-slate-700 bg-slate-50 border-b border-slate-100">🗄 数据</p>
+      <div class="card overflow-hidden">
+        <p class="px-5 py-3 text-xs font-bold text-slate-700 bg-slate-50 border-b border-slate-100 flex items-center gap-1.5"><svg class="ico text-[15px] text-indigo-600"><use href="#i-database" /></svg>数据</p>
         <div class="divide-y divide-slate-100">
-          <div class="flex items-center justify-between px-4 py-2.5">
+          <div class="flex items-center justify-between px-5 py-3">
             <span class="text-xs text-slate-600">已存打卡记录</span>
-            <span class="text-xs font-bold text-slate-800">{{ recordCount }} 天</span>
+            <span class="text-xs font-bold text-slate-800 font-mono-num">{{ recordCount }} 天</span>
           </div>
-          <button @click="exportData" class="w-full text-left px-4 py-3 text-xs font-medium text-blue-600 active:bg-slate-50 transition">导出备份（JSON 文件）</button>
-          <button @click="copyData" class="w-full text-left px-4 py-3 text-xs font-medium text-blue-600 active:bg-slate-50 transition">{{ dataCopied ? '✓ 已复制到剪贴板' : '复制数据到剪贴板' }}</button>
-          <label class="block px-4 py-3 text-xs font-medium text-blue-600 active:bg-slate-50 transition cursor-pointer">
-            导入备份（同日期覆盖）
+          <button @click="exportData" class="w-full flex items-center gap-2 px-5 py-3.5 text-xs font-medium text-indigo-600 active:bg-slate-50 transition"><svg class="ico text-[15px]"><use href="#i-download" /></svg>导出备份（JSON 文件）</button>
+          <button @click="copyData" class="w-full flex items-center gap-2 px-5 py-3.5 text-xs font-medium text-indigo-600 active:bg-slate-50 transition"><svg class="ico text-[15px]"><use :href="dataCopied ? '#i-check' : '#i-copy'" /></svg>{{ dataCopied ? '已复制到剪贴板' : '复制数据到剪贴板' }}</button>
+          <label class="flex items-center gap-2 px-5 py-3.5 text-xs font-medium text-indigo-600 active:bg-slate-50 transition cursor-pointer">
+            <svg class="ico text-[15px]"><use href="#i-upload" /></svg>导入备份（同日期覆盖）
             <input type="file" accept=".json,application/json" @change="importData" class="hidden" />
           </label>
-          <button @click="resetSettings" class="w-full text-left px-4 py-3 text-xs font-medium text-slate-500 active:bg-slate-50 transition">恢复默认设置（不动打卡数据）</button>
-          <button @click="clearMonth" class="w-full text-left px-4 py-3 text-xs font-medium text-rose-600 active:bg-rose-50 transition">清空 {{ currentYear }}年{{ currentMonth + 1 }}月记录</button>
-          <button @click="clearAll" class="w-full text-left px-4 py-3 text-xs font-medium text-rose-600 active:bg-rose-50 transition">清空全部打卡记录</button>
+          <button @click="resetSettings" class="w-full flex items-center gap-2 px-5 py-3.5 text-xs font-medium text-slate-500 active:bg-slate-50 transition"><svg class="ico text-[15px]"><use href="#i-rotate-ccw" /></svg>恢复默认设置（不动打卡数据）</button>
+          <button @click="clearMonth" class="w-full flex items-center gap-2 px-5 py-3.5 text-xs font-medium text-rose-600 active:bg-rose-50 transition"><svg class="ico text-[15px]"><use href="#i-trash-2" /></svg>清空 {{ currentYear }}年{{ currentMonth + 1 }}月记录</button>
+          <button @click="clearAll" class="w-full flex items-center gap-2 px-5 py-3.5 text-xs font-medium text-rose-600 active:bg-rose-50 transition"><svg class="ico text-[15px]"><use href="#i-triangle-alert" /></svg>清空全部打卡记录</button>
         </div>
       </div>
 
@@ -324,11 +439,14 @@
   </main>
 
   <!-- ===== 底部 Tab 导航 ===== -->
-  <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white/95 backdrop-blur border-t border-slate-200 flex safe-bottom z-40">
+  <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white/80 border-t border-slate-200/80 flex safe-bottom z-40" style="backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);">
     <button v-for="t in tabs" :key="t.id" @click="tab = t.id"
-      class="flex-1 flex flex-col items-center py-2.5 active:scale-95 transition">
-      <span class="text-lg leading-none" :class="tab === t.id ? '' : 'opacity-40 grayscale'">{{ t.icon }}</span>
-      <span class="text-[10px] mt-1 font-bold" :class="tab === t.id ? 'text-blue-600' : 'text-slate-400'">{{ t.label }}</span>
+      class="flex-1 flex flex-col items-center pt-2 pb-2.5 active:scale-95 transition relative">
+      <!-- 选中态指示条：品牌色，贴在顶边 -->
+      <span class="absolute top-0 h-[3px] rounded-b-full bg-indigo-600 transition-all duration-300"
+        :class="tab === t.id ? 'w-8 opacity-100' : 'w-0 opacity-0'"></span>
+      <svg class="ico text-[21px] transition-colors" :class="tab === t.id ? 'text-indigo-600' : 'text-slate-400'"><use :href="'#' + t.icon" /></svg>
+      <span class="text-[10px] mt-1 font-bold transition-colors" :class="tab === t.id ? 'text-indigo-600' : 'text-slate-400'">{{ t.label }}</span>
     </button>
   </nav>
 
@@ -342,83 +460,83 @@
             <h3 class="text-base font-bold text-slate-800">{{ currentMonth + 1 }}月{{ selectedDay }}日 打卡</h3>
             <p class="text-[10px] text-slate-400 mt-0.5">
               工时计入
-              <b :class="selectedDay <= settings.cutoff ? 'text-blue-600' : 'text-violet-600'">
+              <b :class="selectedDay <= settings.cutoff ? 'text-sky-600' : 'text-violet-600'">
                 {{ selectedDay <= settings.cutoff ? `${currentMonth + 1}月${settings.payDayA}号` : `${nextLabel.month + 1}月${settings.payDayB}号` }}
               </b>
               · 奖惩次月{{ settings.payDayB }}号结算
             </p>
           </div>
-          <button @click="isDrawerOpen = false" class="text-slate-300 hover:text-slate-500 text-xl font-bold leading-none px-1">✕</button>
+          <button @click="isDrawerOpen = false" class="text-slate-300 hover:text-slate-500 leading-none px-1 pt-0.5"><svg class="ico text-lg"><use href="#i-x" /></svg></button>
         </div>
 
         <div class="grid grid-cols-3 gap-2 mb-4">
           <button v-for="st in statusOptions" :key="st.id" @click="draftRecord.status = st.id"
-            class="py-2.5 rounded-xl font-bold text-xs border-2 transition"
-            :class="draftRecord.status === st.id ? 'border-blue-600 bg-blue-50 text-blue-600' : 'border-slate-100 bg-slate-50 text-slate-400'">
-            {{ st.label }}
+            class="py-2.5 rounded-xl font-bold text-xs border-2 transition flex items-center justify-center gap-1.5"
+            :class="draftRecord.status === st.id ? 'border-indigo-600 bg-indigo-50 text-indigo-600' : 'border-slate-100 bg-slate-50 text-slate-400'">
+            <svg class="ico text-[15px]"><use :href="'#' + st.icon" /></svg>{{ st.label }}
           </button>
         </div>
 
         <div v-if="draftRecord.status === 'work'" class="space-y-3.5">
           <div class="flex space-x-2">
             <button @click="selectShift('day')"
-              class="flex-1 py-2.5 rounded-xl text-xs font-bold border transition"
-              :class="draftRecord.shift_type === 'day' ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-50 text-slate-500 border-slate-200'">
-              ☀️ 白班 {{ cfg.dayHours }}h
+              class="flex-1 py-2.5 rounded-xl text-xs font-bold border transition flex items-center justify-center gap-1.5"
+              :class="draftRecord.shift_type === 'day' ? 'bg-sky-600 text-white border-sky-600' : 'bg-slate-50 text-slate-500 border-slate-200'">
+              <svg class="ico text-[15px]"><use href="#i-sun" /></svg>白班 <span class="font-mono-num">{{ cfg.dayHours }}h</span>
             </button>
             <button @click="selectShift('night')"
-              class="flex-1 py-2.5 rounded-xl text-xs font-bold border transition"
+              class="flex-1 py-2.5 rounded-xl text-xs font-bold border transition flex items-center justify-center gap-1.5"
               :class="draftRecord.shift_type === 'night' ? 'bg-violet-600 text-white border-violet-600' : 'bg-slate-50 text-slate-500 border-slate-200'">
-              🌙 夜班 {{ cfg.nightHours }}h
+              <svg class="ico text-[15px]"><use href="#i-moon" /></svg>夜班 <span class="font-mono-num">{{ cfg.nightHours }}h</span>
             </button>
           </div>
 
-          <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200/70">
+          <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/70">
             <div class="flex justify-between items-center mb-2">
               <span class="text-[11px] font-bold text-slate-500">结算工时</span>
-              <span class="text-xs font-black text-blue-600 bg-white px-2 py-0.5 rounded-lg border border-blue-100">{{ draftRecord.hours }} h</span>
+              <span class="text-xs font-bold text-indigo-600 bg-white px-2 py-0.5 rounded-lg border border-indigo-100 font-mono-num">{{ draftRecord.hours }} h</span>
             </div>
             <div class="flex overflow-x-auto space-x-1.5 no-scrollbar pb-0.5">
               <button v-for="h in hourOptions" :key="h" @click="draftRecord.hours = h"
                 class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold shrink-0 transition tabular-nums"
-                :class="draftRecord.hours === h ? 'bg-blue-600 text-white' : 'bg-white text-slate-500 border border-slate-200'">
+                :class="draftRecord.hours === h ? 'bg-indigo-600 text-white' : 'bg-white text-slate-500 border border-slate-200'">
                 {{ h }}
               </button>
             </div>
           </div>
 
-          <div class="bg-amber-50/60 p-3 rounded-2xl border border-amber-100">
+          <div class="bg-amber-50/60 p-3.5 rounded-2xl border border-amber-100">
             <p class="text-[10px] text-amber-800/80 font-bold mb-2.5 text-center">以下奖惩不计入当月工资，次月{{ settings.payDayB }}号结算</p>
             <div class="grid grid-cols-2 gap-3">
               <div class="text-center">
-                <p class="text-[10px] font-bold text-emerald-700">查获 +{{ settings.foundBonus }}/件</p>
+                <p class="text-[10px] font-bold text-emerald-600">查获 +{{ settings.foundBonus }}/件</p>
                 <div class="flex justify-center items-center space-x-2 mt-1.5">
-                  <button @click="draftRecord.contraband_found = Math.max(0, draftRecord.contraband_found - 1)" class="w-7 h-7 bg-white rounded-full shadow-sm text-sm font-bold border border-slate-200 active:scale-90">−</button>
-                  <span class="font-black text-sm text-slate-700 w-5">{{ draftRecord.contraband_found }}</span>
-                  <button @click="draftRecord.contraband_found++" class="w-7 h-7 bg-emerald-600 text-white rounded-full shadow-sm text-sm font-bold active:scale-90">+</button>
+                  <button @click="draftRecord.contraband_found = Math.max(0, draftRecord.contraband_found - 1)" class="w-7 h-7 bg-white rounded-full shadow-sm border border-slate-200 active:scale-90 flex items-center justify-center text-slate-500"><svg class="ico text-sm"><use href="#i-minus" /></svg></button>
+                  <span class="font-bold text-sm text-slate-700 w-5 font-mono-num">{{ draftRecord.contraband_found }}</span>
+                  <button @click="draftRecord.contraband_found++" class="w-7 h-7 bg-emerald-600 text-white rounded-full shadow-sm active:scale-90 flex items-center justify-center"><svg class="ico text-sm"><use href="#i-plus" /></svg></button>
                 </div>
               </div>
               <div class="text-center">
                 <p class="text-[10px] font-bold text-rose-600">漏查 −{{ settings.missedPenalty }}/件</p>
                 <div class="flex justify-center items-center space-x-2 mt-1.5">
-                  <button @click="draftRecord.contraband_missed = Math.max(0, draftRecord.contraband_missed - 1)" class="w-7 h-7 bg-white rounded-full shadow-sm text-sm font-bold border border-slate-200 active:scale-90">−</button>
-                  <span class="font-black text-sm text-slate-700 w-5">{{ draftRecord.contraband_missed }}</span>
-                  <button @click="draftRecord.contraband_missed++" class="w-7 h-7 bg-rose-500 text-white rounded-full shadow-sm text-sm font-bold active:scale-90">+</button>
+                  <button @click="draftRecord.contraband_missed = Math.max(0, draftRecord.contraband_missed - 1)" class="w-7 h-7 bg-white rounded-full shadow-sm border border-slate-200 active:scale-90 flex items-center justify-center text-slate-500"><svg class="ico text-sm"><use href="#i-minus" /></svg></button>
+                  <span class="font-bold text-sm text-slate-700 w-5 font-mono-num">{{ draftRecord.contraband_missed }}</span>
+                  <button @click="draftRecord.contraband_missed++" class="w-7 h-7 bg-rose-500 text-white rounded-full shadow-sm active:scale-90 flex items-center justify-center"><svg class="ico text-sm"><use href="#i-plus" /></svg></button>
                 </div>
               </div>
             </div>
             <div class="flex items-center space-x-2 mt-3">
               <input type="number" min="0" step="1" v-model.number="draftRecord.other_penalty" placeholder="其他扣款"
-                class="w-24 bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] text-slate-700 outline-none focus:border-blue-500" />
+                class="w-24 bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] text-slate-700 outline-none focus:border-indigo-500 font-mono-num" />
               <input type="text" v-model="draftRecord.penalty_reason" placeholder="处罚原因（选填）"
-                class="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] text-slate-700 outline-none focus:border-blue-500" />
+                class="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] text-slate-700 outline-none focus:border-indigo-500" />
             </div>
           </div>
         </div>
 
         <div class="mt-5 flex space-x-2.5">
-          <button @click="deleteRecord" class="px-4 py-3 bg-slate-100 text-slate-500 rounded-xl text-xs font-bold active:scale-95 transition">清除</button>
-          <button @click="saveRecord" class="flex-1 py-3 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-md active:scale-95 transition">保存打卡</button>
+          <button @click="deleteRecord" class="px-4 py-3 bg-slate-100 text-slate-500 rounded-xl text-xs font-bold active:scale-95 transition flex items-center gap-1.5"><svg class="ico text-sm"><use href="#i-trash-2" /></svg>清除</button>
+          <button @click="saveRecord" class="flex-1 py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md active:scale-95 transition flex items-center justify-center gap-1.5"><svg class="ico text-base"><use href="#i-check" /></svg>保存打卡</button>
         </div>
       </div>
     </div>
@@ -494,15 +612,17 @@ createApp({
 
     // ===== 页签 =====
     const tab = ref('calendar');
+    // icon 存 sprite 里的 symbol id，模板用 <use :href="'#' + icon"> 渲染线性图标。
+    // 注意：verify_payroll.js 用例20 断言 tabs 长度=3 且 id 顺序为 calendar,summary,settings，勿改这两项。
     const tabs = [
-      { id: 'calendar', icon: '📅', label: '打卡' },
-      { id: 'summary',  icon: '📊', label: '汇总' },
-      { id: 'settings', icon: '⚙️', label: '设置' }
+      { id: 'calendar', icon: 'i-calendar-days', label: '打卡' },
+      { id: 'summary',  icon: 'i-chart-column',  label: '汇总' },
+      { id: 'settings', icon: 'i-settings',      label: '设置' }
     ];
     const statusOptions = [
-      { id: 'work',  label: '💼 上班' },
-      { id: 'rest',  label: '☕ 休息' },
-      { id: 'leave', label: '📝 请假' }
+      { id: 'work',  icon: 'i-briefcase',    label: '上班' },
+      { id: 'rest',  icon: 'i-coffee',       label: '休息' },
+      { id: 'leave', icon: 'i-notebook-pen', label: '请假' }
     ];
 
     const today = new Date();
@@ -553,6 +673,20 @@ createApp({
     const fmt = (n) => (Number(n) || 0).toFixed(1);
     const money = (n) => '¥' + (Number(n) || 0).toFixed(1);
     const signed = (n) => { const v = Number(n) || 0; return (v >= 0 ? '+¥' : '-¥') + Math.abs(v).toFixed(1); };
+
+    // 金额拆成 符号/整数部/小数部，供看板主数字分层渲染（大字只放整数部）。
+    // 必须从 toFixed(1) 的结果上切，不能用 Math.floor 另算，
+    // 否则 99.96 会被 money() 进为 100.0、而拆分出 99.0，两处数字对不上。
+    const moneyParts = (n) => {
+      const v = Number(n) || 0;
+      const s = Math.abs(v).toFixed(1);
+      const dot = s.indexOf('.');
+      return {
+        sign: v < 0 ? '-' : '',
+        int: s.slice(0, dot).replace(/\B(?=(\d{3})+(?!\d))/g, ','),   // 千分位
+        frac: s.slice(dot)
+      };
+    };
 
     // ===== 核心聚合：本月 / 上月共用同一套口径 =====
     // 夜班跨天：工时全部归入开始打卡的那一天。
@@ -630,17 +764,29 @@ createApp({
 
     const recordCount = computed(() => Object.keys(records.value).length);
 
+    // 看板主数字：本月两笔到账合计
+    const boardMain = computed(() => moneyParts(payoutThisB.value + payoutThisA.value));
+
     const hasPenalty = (day) => {
       const r = getRecord(day);
       return !!r && r.status === 'work' && (Number(r.contraband_missed || 0) > 0 || Number(r.other_penalty || 0) > 0);
     };
 
+    // 上下半月分界格：7 列网格里 day+7 就在 day 正下方，
+    // 所以给 cutoff-6 … cutoff 这 7 格加底虚线，正好描出一条完整分界线，
+    // 而且不需要往网格里插额外元素，星期对齐不会被打买。
+    const isCutEdge = (day) => {
+      const c = cfg.value.cutoff;
+      return day <= c && day + 7 > c;
+    };
+
     const cellClass = (day) => {
       const r = getRecord(day);
-      const cls = [day <= cfg.value.cutoff ? 'border-l-[3px] border-l-blue-300' : 'border-l-[3px] border-l-violet-300'];
-      if (isToday(day)) cls.push('ring-2 ring-blue-500');
+      const cls = [];
+      if (isCutEdge(day)) cls.push('cut-edge');
+      if (isToday(day)) cls.push('ring-2 ring-indigo-500/70');
       if (!r) cls.push('bg-white border-slate-100');
-      else if (r.status === 'work') cls.push('bg-emerald-50/60 border-emerald-100');
+      else if (r.status === 'work') cls.push(r.shift_type === 'night' ? 'bg-violet-50/70 border-violet-100' : 'bg-sky-50/70 border-sky-100');
       else if (r.status === 'rest') cls.push('bg-slate-100/70 border-slate-200');
       else if (r.status === 'leave') cls.push('bg-amber-50/60 border-amber-100');
       else cls.push('bg-white border-slate-100');
@@ -851,8 +997,8 @@ createApp({
       copied, dataCopied, toast,
       monthStats, prevStats, prevLabel, nextLabel,
       payoutThisA, payoutThisB, payoutNextB, penaltyDetails,
-      fmt, money, signed, buildReport, applyImport,
-      isToday, isCurrentMonth, getRecord, hasPenalty, cellClass,
+      fmt, money, signed, moneyParts, boardMain, buildReport, applyImport,
+      isToday, isCurrentMonth, getRecord, hasPenalty, cellClass, isCutEdge,
       changeMonth, goToday, openDayDrawer, selectShift,
       saveRecord, deleteRecord, copyReport,
       exportData, copyData, importData, resetSettings, clearMonth, clearAll
