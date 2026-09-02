@@ -17,6 +17,14 @@
       --neg-fg: #E11D48;  /* 负向·玫瑰字   = rose-600   */
       --page:   #F8FAFC;  /* 页面底色      = slate-50   */
       --line:   #F1F5F9;  /* 卡片描边      = slate-100  */
+
+      /* 圆角三级阶梯：外层容器 / 内嵌块 / 胶囊标签 */
+      --r-out:  16px;
+      --r-in:   10px;
+      --r-pill: 999px;
+      /* 统一描边与落影 */
+      --hair:   1px solid rgba(0, 0, 0, .06);
+      --lift:   0 4px 20px -2px rgba(0, 0, 0, .05);
     }
 
     .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -31,13 +39,31 @@
     /* 等宽数字：账单上下对齐，数值刷新时不左右跳动 */
     .font-mono-num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
 
-    /* 统一卡片：16px 圆角 + 极柔和弥散阴影 */
+    /* 统一卡片：外层 16px 圆角 + 一根发丝描边 + 大范围弥散落影。
+       落影用大 blur、小 alpha，读起来是「浮起来」而不是「加了一道灰边」。 */
     .card {
-      border-radius: 16px;
+      border-radius: var(--r-out);
       background: #ffffff;
-      border: 1px solid var(--line);
-      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, .05), 0 1px 2px -1px rgba(0, 0, 0, .05);
+      border: var(--hair);
+      box-shadow: var(--lift);
     }
+
+    /* 内嵌块（卡片里的小格子）：圆角收一档到 10px，形成外大内小的嵌套层级 */
+    .inset { border-radius: var(--r-in); }
+
+    /* 金额柔色徽章：正向薄荷、负向玫瑰、零值中性。
+       把符号和数字一起裹进底色里，靠色相表意，不再靠一个生硬的加减号。 */
+    .amt {
+      display: inline-flex; align-items: center;
+      padding: 2px 8px;
+      border-radius: var(--r-pill);
+      font-size: 11px; line-height: 1.45; font-weight: 700;
+      font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1;
+      white-space: nowrap;
+    }
+    .amt-pos  { background: var(--pos-bg); color: var(--pos-fg); }
+    .amt-neg  { background: var(--neg-bg); color: var(--neg-fg); }
+    .amt-zero { background: #F1F5F9;      color: #94A3B8; }
 
     /* Lucide 线性图标：尺寸由自身 font-size 决定（用 Tailwind text-· 类控制），
        避免和 Tailwind 的宽高工具类抢层叠顺序。
@@ -235,26 +261,26 @@
       <!-- 本月到账 -->
       <div class="card overflow-hidden">
         <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
-          <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5"><svg class="ico text-[15px] text-indigo-600"><use href="#i-wallet" /></svg>本月到账</span>
-          <span class="text-[10px] text-slate-400">时薪 {{ settings.rate }} 元/h</span>
+          <span class="text-[13px] font-bold text-slate-800 flex items-center gap-1.5"><svg class="ico text-[15px] text-indigo-600"><use href="#i-wallet" /></svg>本月到账</span>
+          <span class="text-[10px] font-normal text-slate-400 font-mono-num">时薪 {{ settings.rate }} 元/h</span>
         </div>
         <div class="divide-y divide-slate-100">
           <div class="flex items-center justify-between px-5 py-3.5">
             <div class="min-w-0 pr-2">
-              <p class="text-xs font-bold text-slate-700">{{ currentMonth + 1 }}月{{ settings.payDayB }}日</p>
-              <p class="text-[10px] text-slate-400 mt-0.5">{{ prevLabel.month + 1 }}月下半月 {{ fmt(prevStats.h2) }}h + 奖惩 {{ signed(prevStats.adjustNet) }}</p>
+              <p class="text-xs font-semibold text-slate-700">{{ currentMonth + 1 }}月{{ settings.payDayB }}日</p>
+              <p class="text-[10px] font-normal text-slate-400 mt-0.5">{{ prevLabel.month + 1 }}月下半月 {{ fmt(prevStats.h2) }}h + 奖惩 {{ signed(prevStats.adjustNet) }}</p>
             </div>
-            <span class="text-base font-black text-slate-800 shrink-0">{{ money(payoutThisB) }}</span>
+            <span class="text-[17px] font-bold text-slate-800 shrink-0 font-mono-num">{{ money(payoutThisB) }}</span>
           </div>
           <div class="flex items-center justify-between px-5 py-3.5">
             <div class="min-w-0 pr-2">
-              <p class="text-xs font-bold text-slate-700">{{ currentMonth + 1 }}月{{ settings.payDayA }}日</p>
-              <p class="text-[10px] text-slate-400 mt-0.5">本月上半月 {{ fmt(monthStats.h1) }}h · 纯工时</p>
+              <p class="text-xs font-semibold text-slate-700">{{ currentMonth + 1 }}月{{ settings.payDayA }}日</p>
+              <p class="text-[10px] font-normal text-slate-400 mt-0.5">本月上半月 {{ fmt(monthStats.h1) }}h · 纯工时</p>
             </div>
-            <span class="text-base font-black text-slate-800 shrink-0">{{ money(payoutThisA) }}</span>
+            <span class="text-[17px] font-bold text-slate-800 shrink-0 font-mono-num">{{ money(payoutThisA) }}</span>
           </div>
           <div class="flex items-center justify-between px-5 py-3 bg-slate-50">
-            <span class="text-xs font-bold text-slate-500">本月现金流合计</span>
+            <span class="text-xs font-semibold text-slate-500">本月现金流合计</span>
             <span class="text-lg font-bold text-indigo-600 font-mono-num">{{ money(payoutThisB + payoutThisA) }}</span>
           </div>
         </div>
@@ -262,60 +288,60 @@
 
       <!-- 本月工时 -->
       <div class="card px-5 py-4">
-        <p class="text-xs font-bold text-slate-700 mb-3 flex items-center gap-1.5"><svg class="ico text-[15px] text-indigo-600"><use href="#i-clock" /></svg>本月工时</p>
+        <p class="text-[13px] font-bold text-slate-800 mb-3 flex items-center gap-1.5"><svg class="ico text-[15px] text-indigo-600"><use href="#i-clock" /></svg>本月工时</p>
         <div class="grid grid-cols-2 gap-2 mb-3">
-          <div class="bg-sky-50/70 rounded-xl p-2.5 border border-sky-100">
-            <p class="text-[10px] text-sky-700/80">上半月 1–{{ settings.cutoff }}日</p>
-            <p class="text-sm font-bold text-sky-700 mt-0.5 font-mono-num">{{ fmt(monthStats.h1) }}h</p>
-            <p class="text-[10px] text-slate-400">{{ money(monthStats.h1 * settings.rate) }}</p>
+          <div class="inset bg-sky-50/70 p-2.5 border border-sky-100">
+            <p class="text-[10px] font-normal text-sky-700/80">上半月 1–{{ settings.cutoff }}日</p>
+            <p class="text-[15px] font-bold text-sky-700 mt-0.5 font-mono-num">{{ fmt(monthStats.h1) }}h</p>
+            <p class="text-[10px] font-normal text-slate-400 font-mono-num">{{ money(monthStats.h1 * settings.rate) }}</p>
           </div>
-          <div class="bg-violet-50/60 rounded-xl p-2.5 border border-violet-100/70">
-            <p class="text-[10px] text-violet-700/70">下半月 {{ settings.cutoff + 1 }}日–月底</p>
-            <p class="text-sm font-black text-violet-700 mt-0.5">{{ fmt(monthStats.h2) }}h</p>
-            <p class="text-[10px] text-slate-400">{{ money(monthStats.h2 * settings.rate) }}</p>
+          <div class="inset bg-violet-50/60 p-2.5 border border-violet-100/70">
+            <p class="text-[10px] font-normal text-violet-700/70">下半月 {{ settings.cutoff + 1 }}日–月底</p>
+            <p class="text-[15px] font-bold text-violet-700 mt-0.5 font-mono-num">{{ fmt(monthStats.h2) }}h</p>
+            <p class="text-[10px] font-normal text-slate-400 font-mono-num">{{ money(monthStats.h2 * settings.rate) }}</p>
           </div>
         </div>
         <div class="space-y-1.5 text-xs">
-          <div class="flex justify-between"><span class="text-slate-500">出勤天数</span><span class="font-bold text-slate-700">{{ monthStats.workDays }} 天（白 {{ monthStats.dayShifts }} / 夜 {{ monthStats.nightShifts }}）</span></div>
-          <div class="flex justify-between"><span class="text-slate-500">休息 / 请假</span><span class="font-bold text-slate-700">{{ monthStats.restDays }} / {{ monthStats.leaveDays }} 天</span></div>
-          <div class="flex justify-between pt-1.5 border-t border-slate-100"><span class="text-slate-500">工时收入合计</span><span class="font-black text-slate-800">{{ money(monthStats.basePay) }}</span></div>
+          <div class="flex justify-between"><span class="text-slate-500">出勤天数</span><span class="font-semibold text-slate-700 font-mono-num">{{ monthStats.workDays }} 天（白 {{ monthStats.dayShifts }} / 夜 {{ monthStats.nightShifts }}）</span></div>
+          <div class="flex justify-between"><span class="text-slate-500">休息 / 请假</span><span class="font-semibold text-slate-700 font-mono-num">{{ monthStats.restDays }} / {{ monthStats.leaveDays }} 天</span></div>
+          <div class="flex justify-between pt-2 border-t border-slate-100"><span class="font-semibold text-slate-600">工时收入合计</span><span class="font-bold text-slate-800 font-mono-num">{{ money(monthStats.basePay) }}</span></div>
         </div>
       </div>
 
       <!-- 本月奖惩（挂账） -->
       <div class="card px-5 py-4">
         <div class="flex items-center justify-between mb-1">
-          <p class="text-xs font-bold text-slate-700 flex items-center gap-1.5"><svg class="ico text-[15px] text-indigo-600"><use href="#i-award" /></svg>本月奖惩</p>
-          <span class="text-[10px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">次月{{ settings.payDayB }}号结算</span>
+          <p class="text-[13px] font-bold text-slate-800 flex items-center gap-1.5"><svg class="ico text-[15px] text-indigo-600"><use href="#i-award" /></svg>本月奖惩</p>
+          <span class="text-[10px] font-semibold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">次月{{ settings.payDayB }}号结算</span>
         </div>
-        <p class="text-[10px] text-slate-400 mb-2.5">以下金额不计入当月工资</p>
+        <p class="text-[10px] font-normal text-slate-400 mb-2.5">以下金额不计入当月工资</p>
         <div class="space-y-1.5 text-xs">
-          <div class="flex justify-between">
+          <div class="flex justify-between items-center">
             <span class="text-slate-500">满勤奖<span class="text-slate-400">{{ monthStats.workDays >= settings.fullDays ? '（' + fmt(monthStats.totalHours) + 'h×' + settings.fullBonusPerHour + '）' : '（未达' + settings.fullDays + '天）' }}</span></span>
-            <span class="font-bold" :class="monthStats.fullBonus > 0 ? 'text-emerald-600' : 'text-slate-400'">{{ monthStats.fullBonus > 0 ? '+' + money(monthStats.fullBonus) : '¥0' }}</span>
+            <span class="amt" :class="monthStats.fullBonus > 0 ? 'amt-pos' : 'amt-zero'">{{ monthStats.fullBonus > 0 ? '+' + money(monthStats.fullBonus) : '¥0' }}</span>
           </div>
-          <div class="flex justify-between">
+          <div class="flex justify-between items-center">
             <span class="text-slate-500">查获奖励<span class="text-slate-400">（{{ monthStats.foundCount }}件）</span></span>
-            <span class="font-bold" :class="monthStats.foundBonus > 0 ? 'text-emerald-600' : 'text-slate-400'">{{ monthStats.foundBonus > 0 ? '+' + money(monthStats.foundBonus) : '¥0' }}</span>
+            <span class="amt" :class="monthStats.foundBonus > 0 ? 'amt-pos' : 'amt-zero'">{{ monthStats.foundBonus > 0 ? '+' + money(monthStats.foundBonus) : '¥0' }}</span>
           </div>
-          <div class="flex justify-between">
+          <div class="flex justify-between items-center">
             <span class="text-slate-500">漏查处罚<span class="text-slate-400">（{{ monthStats.missedCount }}件）</span></span>
-            <span class="font-bold" :class="monthStats.missedPenalty > 0 ? 'text-rose-600' : 'text-slate-400'">{{ monthStats.missedPenalty > 0 ? '-' + money(monthStats.missedPenalty) : '¥0' }}</span>
+            <span class="amt" :class="monthStats.missedPenalty > 0 ? 'amt-neg' : 'amt-zero'">{{ monthStats.missedPenalty > 0 ? '-' + money(monthStats.missedPenalty) : '¥0' }}</span>
           </div>
-          <div class="flex justify-between">
+          <div class="flex justify-between items-center">
             <span class="text-slate-500">其他扣款</span>
-            <span class="font-bold" :class="monthStats.otherPenalties > 0 ? 'text-rose-600' : 'text-slate-400'">{{ monthStats.otherPenalties > 0 ? '-' + money(monthStats.otherPenalties) : '¥0' }}</span>
+            <span class="amt" :class="monthStats.otherPenalties > 0 ? 'amt-neg' : 'amt-zero'">{{ monthStats.otherPenalties > 0 ? '-' + money(monthStats.otherPenalties) : '¥0' }}</span>
           </div>
-          <div class="flex justify-between pt-1.5 border-t border-slate-100">
-            <span class="text-slate-500">奖惩净额</span>
-            <span class="font-black" :class="monthStats.adjustNet >= 0 ? 'text-emerald-700' : 'text-rose-700'">{{ signed(monthStats.adjustNet) }}</span>
+          <div class="flex justify-between items-center pt-2 border-t border-slate-100">
+            <span class="font-semibold text-slate-600">奖惩净额</span>
+            <span class="amt text-[12px]" :class="monthStats.adjustNet > 0 ? 'amt-pos' : (monthStats.adjustNet < 0 ? 'amt-neg' : 'amt-zero')">{{ signed(monthStats.adjustNet) }}</span>
           </div>
         </div>
         <div v-if="penaltyDetails.length" class="mt-3 pt-2.5 border-t border-slate-100 space-y-1">
           <p class="text-[10px] font-bold text-slate-400 mb-1">处罚明细</p>
-          <div v-for="d in penaltyDetails" :key="d.day" class="flex justify-between text-[11px]">
+          <div v-for="d in penaltyDetails" :key="d.day" class="flex justify-between items-center text-[11px]">
             <span class="text-slate-500 truncate pr-2">{{ d.day }}日 {{ d.reason }}</span>
-            <span class="text-rose-600 font-bold shrink-0">-{{ money(d.amount) }}</span>
+            <span class="amt amt-neg shrink-0">-{{ money(d.amount) }}</span>
           </div>
         </div>
       </div>
@@ -327,8 +353,8 @@
           <span class="text-lg font-black text-amber-700">{{ money(payoutNextB) }}</span>
         </div>
         <div class="space-y-1 text-[11px] text-amber-800/80">
-          <div class="flex justify-between"><span>本月下半月工时 {{ fmt(monthStats.h2) }}h</span><span>{{ money(monthStats.h2 * settings.rate) }}</span></div>
-          <div class="flex justify-between"><span>本月奖惩结算</span><span>{{ signed(monthStats.adjustNet) }}</span></div>
+          <div class="flex justify-between items-center"><span>本月下半月工时 {{ fmt(monthStats.h2) }}h</span><span class="font-mono-num font-semibold">{{ money(monthStats.h2 * settings.rate) }}</span></div>
+          <div class="flex justify-between items-center"><span>本月奖惩结算</span><span class="amt" :class="monthStats.adjustNet > 0 ? 'amt-pos' : (monthStats.adjustNet < 0 ? 'amt-neg' : 'amt-zero')">{{ signed(monthStats.adjustNet) }}</span></div>
         </div>
         <p v-if="monthStats.h2 * settings.rate + monthStats.adjustNet < 0" class="mt-2 text-[10px] text-rose-600 font-bold flex items-start gap-1"><svg class="ico text-[13px] mt-px"><use href="#i-triangle-alert" /></svg><span>处罚已超过下半月工时收入，实发按 ¥0 计，差额可能顺延</span></p>
       </div>
