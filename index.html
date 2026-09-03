@@ -283,15 +283,9 @@
         <span class="whitespace-nowrap">满勤 <b class="font-bold text-amber-200">{{ money(monthStats.fullBonus) }}</b></span>
         <span class="text-indigo-100/45">＋</span>
         <span class="whitespace-nowrap">奖惩 <b class="font-bold" :class="monthStats.reviewNet > 0 ? 'text-emerald-300' : (monthStats.reviewNet < 0 ? 'text-rose-300' : 'text-indigo-100/70')">{{ signed(monthStats.reviewNet) }}</b>
-          <span class="ml-1 text-[9px] font-sans" :class="monthStats.finalized ? 'text-emerald-300' : 'text-indigo-100/55'">{{ monthStats.finalized ? '已定稿' : '未定稿不计' }}</span>
+          <span class="ml-1 text-[9px] font-sans" :class="monthStats.finalized ? 'text-emerald-300' : 'text-indigo-100/55'">{{ monthStats.finalized ? '已定稿' : '未定稿' }}</span>
         </span>
       </div>
-
-      <!-- 未定稿的奖惩只是记录，不能影响上方金额，所以单独一行展示，跟「差几天满勤」一样属于「还没到手的目标」 -->
-      <p v-if="!monthStats.finalized && monthStats.rawReview !== 0" class="mt-1.5 text-[10px] text-indigo-100/60 flex items-start gap-1">
-        <svg class="ico text-[12px] mt-px shrink-0"><use href="#i-hourglass" /></svg>
-        <span>记录中 <b class="font-mono-num font-bold text-indigo-100/85">{{ signed(monthStats.rawReview) }}</b>（查获 {{ monthStats.foundCount }} 件<span v-if="monthStats.missedCount > 0"> · 漏查 {{ monthStats.missedCount }} 件</span>），需次月初组长审核定稿后才计入</span>
-      </p>
 
       <!-- 第三层：现金流降级为弱化说明条。与上方「应得」量级不同，必须分区，不再挤在一起。 -->
       <div class="mt-3 rounded-xl px-3 py-2.5 space-y-1" style="background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.13);">
@@ -552,10 +546,11 @@
             <span class="amt" :class="monthStats.fullBonus > 0 ? 'amt-pos' : 'amt-zero'">{{ monthStats.fullBonus > 0 ? '+' + money(monthStats.fullBonus) : '¥0' }}</span>
           </div>
 
-          <!-- 这一行才是真正计入应得的金额：未定稿恒为 ¥0，与未达满勤不计满勤奖同一个道理 -->
+          <!-- 本卡内已经列了满勤奖，所以尾行合计必须把两笔已确认的钱加在一起：
+               = 满勤奖（达标才计）+ 奖惩净额（定稿才计），正好是次月 payDayB 除工时外多发的部分 -->
           <div class="flex justify-between items-center pt-2 border-t border-slate-100">
-            <span class="font-semibold text-slate-600">计入应得的奖惩<span class="text-[10px] text-slate-400">{{ monthStats.finalized ? '（已定稿）' : '（未定稿，不计）' }}</span></span>
-            <span class="amt text-[12px]" :class="monthStats.reviewNet > 0 ? 'amt-pos' : (monthStats.reviewNet < 0 ? 'amt-neg' : 'amt-zero')">{{ signed(monthStats.reviewNet) }}</span>
+            <span class="font-semibold text-slate-600">计入应得合计<span class="text-[10px] text-slate-400">（满勤+奖惩）</span></span>
+            <span class="amt text-[12px]" :class="monthStats.adjustNet > 0 ? 'amt-pos' : (monthStats.adjustNet < 0 ? 'amt-neg' : 'amt-zero')">{{ signed(monthStats.adjustNet) }}</span>
           </div>
         </div>
 
@@ -789,13 +784,6 @@
         <div class="flex justify-between items-start mb-4 pb-3 border-b border-slate-100">
           <div>
             <h3 class="text-base font-bold text-slate-800">{{ currentMonth + 1 }}月{{ selectedDay }}日 打卡</h3>
-            <p class="text-[10px] text-slate-400 mt-0.5">
-              工时计入
-              <b :class="selectedDay <= settings.cutoff ? 'text-sky-600' : 'text-violet-600'">
-                {{ selectedDay <= settings.cutoff ? `${currentMonth + 1}月${settings.payDayA}号` : `${nextLabel.month + 1}月${settings.payDayB}号` }}
-              </b>
-              · 奖惩定稿后随次月{{ settings.payDayB }}号发
-            </p>
           </div>
           <button @click="isDrawerOpen = false" class="text-slate-300 hover:text-slate-500 leading-none px-1 pt-0.5"><svg class="ico text-lg"><use href="#i-x" /></svg></button>
         </div>
