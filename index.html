@@ -203,20 +203,16 @@
   <header class="text-white px-5 pt-5 pb-5 rounded-b-3xl board-shadow shrink-0 relative overflow-hidden"
     style="background-image: radial-gradient(125% 125% at 85% -10%, #6366F1 0%, rgba(99,102,241,0) 58%), linear-gradient(135deg, #1E293B 0%, #312E81 56%, #4F46E5 100%);">
     <!-- 月份切换（日历/汇总） -->
-    <div v-if="tab !== 'settings'" class="flex justify-between items-center">
+    <div class="flex justify-between items-center">
       <div class="flex items-center space-x-1">
         <button @click="changeMonth(-1)" class="w-7 h-7 rounded-full hover:bg-white/20 active:scale-90 transition flex items-center justify-center"><svg class="ico text-base"><use href="#i-chevron-left" /></svg></button>
         <span class="text-base font-bold tracking-wide font-mono-num">{{ currentYear }}年{{ currentMonth + 1 }}月</span>
         <button @click="changeMonth(1)" class="w-7 h-7 rounded-full hover:bg-white/20 active:scale-90 transition flex items-center justify-center"><svg class="ico text-base"><use href="#i-chevron-right" /></svg></button>
       </div>
       <div class="flex items-center space-x-1">
-        <button v-if="tab !== 'settings' && !isCurrentMonth" @click="goToday" class="pill active:scale-95 transition">回今天</button>
-        <button @click="tab = 'settings'" class="w-7 h-7 rounded-full hover:bg-white/20 active:scale-90 transition flex items-center justify-center" title="设置"><svg class="ico text-base"><use href="#i-settings" /></svg></button>
+        <button v-if="!isCurrentMonth" @click="goToday" class="pill active:scale-95 transition">回今天</button>
+        <button @click="openSettings" class="w-7 h-7 rounded-full hover:bg-white/20 active:scale-90 transition flex items-center justify-center" title="设置"><svg class="ico text-base"><use href="#i-settings" /></svg></button>
       </div>
-    </div>
-    <!-- 设置页标题 -->
-    <div v-else class="flex items-center h-7">
-      <span class="text-base font-bold tracking-wide flex items-center gap-1.5"><svg class="ico text-[17px]"><use href="#i-settings" /></svg>设置</span>
     </div>
 
     <!-- 主数字：本月预计到账（仅日历页）。¥ 与小数位缩小，整数部放大，形成阶梯感 -->
@@ -447,8 +443,23 @@
       </button>
     </section>
 
-    <!-- ========== ③ 设置 ========== -->
-    <section v-show="tab === 'settings'" class="px-4 pt-5 pb-4 space-y-3.5">
+  </main>
+
+  <!-- ===== 设置抽屉 ===== -->
+  <transition name="drawer">
+    <div v-if="settingsOpen" class="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm" @click.self="closeSettings">
+      <div class="w-full max-w-md bg-white rounded-t-3xl shadow-2xl flex flex-col">
+        <!-- 抽屉把手 -->
+        <div class="pt-2.5 pb-1 flex justify-center shrink-0" @click="closeSettings">
+          <div class="w-[54px] h-[5px] rounded-full bg-slate-300"></div>
+        </div>
+        <!-- 标题 + 关闭 -->
+        <div class="flex justify-between items-center px-5 pb-3 shrink-0">
+          <span class="text-lg font-bold text-slate-800 flex items-center gap-1.5"><svg class="ico text-[20px] text-indigo-600"><use href="#i-settings" /></svg>设置</span>
+          <button @click="closeSettings" class="text-slate-300 hover:text-slate-500 leading-none px-1 pt-0.5"><svg class="ico text-lg"><use href="#i-x" /></svg></button>
+        </div>
+        <!-- 抽屉内容：可直接滚动 -->
+        <div class="overflow-y-auto no-scrollbar max-h-[72vh] px-4 pb-8 pt-1 space-y-3.5">
 
       <div class="card overflow-hidden">
         <p class="px-5 py-3 text-xs font-bold text-slate-700 bg-slate-50 border-b border-slate-100 flex items-center gap-1.5"><svg class="ico text-[15px] text-indigo-600"><use href="#i-coins" /></svg>薪酬规则</p>
@@ -541,13 +552,17 @@
       <p class="text-center text-[10px] text-slate-400 leading-relaxed pt-1 pb-2">
         数据仅保存在本机浏览器（localStorage）。<br />清除浏览器数据会丢失，建议定期导出备份。
       </p>
-    </section>
 
-  </main>
+        </div>
+      </div>
+    </div>
+  </transition>
 
   <!-- ===== 底部 Tab 导航 ===== -->
   <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white/80 border-t border-slate-200/80 flex safe-bottom z-40" style="backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);">
-    <button v-for="t in tabs" :key="t.id" @click="tab = t.id"
+    <button v-for="t in tabs" :key="t.id"
+      :class="t.id === 'settings' ? '' : ''"
+      @click="t.id === 'settings' ? openSettings() : (tab = t.id)"
       class="flex-1 flex flex-col items-center pt-2 pb-2.5 active:scale-95 transition relative">
       <!-- 选中态指示条：品牌色，贴在顶边 -->
       <span class="absolute top-0 h-[3px] rounded-b-full bg-indigo-600 transition-all duration-300"
@@ -921,6 +936,9 @@ createApp({
       isDrawerOpen.value = true;
     };
 
+    const openSettings = () => { settingsOpen.value = true; };
+    const closeSettings = () => { settingsOpen.value = false; };
+
     const selectShift = (type) => {
       draftRecord.value.shift_type = type;
       draftRecord.value.hours = type === 'night' ? cfg.value.nightHours : cfg.value.dayHours;
@@ -1109,6 +1127,7 @@ createApp({
       fmt, money, signed, moneyParts, boardMain, buildReport, applyImport,
       isToday, isCurrentMonth, getRecord, hasPenalty, cellClass, isCutEdge,
       changeMonth, goToday, openDayDrawer, selectShift,
+      openSettings, closeSettings,
       saveRecord, deleteRecord, copyReport,
       exportData, copyData, importData, resetSettings, clearMonth, clearAll
     };
