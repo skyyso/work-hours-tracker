@@ -83,6 +83,46 @@
        Tailwind CDN 运行时注入的样式可能排在本文件之后，所以用 !important 压住单边颜色。 */
     .cut-edge { border-bottom: 2px dashed rgba(148, 163, 184, .55) !important; }
 
+    /* ===== 日历格胶囊结构（第三轮） =====
+       班次与工时整合为紧凑胶囊，避免 hInt/hFrac 拆分小数导致的折行；
+       左下实心属性点移除，仅保留右上状态点。 */
+    .calendar-cell {
+      display: flex; flex-direction: column;
+      justify-content: space-between; align-items: center;
+      height: 56px; padding: 4px 2px; box-sizing: border-box;
+    }
+    .cell-top {
+      display: flex; justify-content: space-between; align-items: center;
+      width: 100%; padding: 0 4px;
+    }
+    .day-num {
+      font-size: 13px; font-weight: 500; color: #1f2937;
+      font-variant-numeric: tabular-nums;
+    }
+    .event-dot {
+      width: 5px; height: 5px; border-radius: 50%; background-color: #10b981;
+    }
+    .event-dot.rose { background-color: #f43f5e; }
+    .cell-bottom {
+      display: flex; justify-content: center; align-items: center; width: 100%;
+    }
+    .shift-pill {
+      display: inline-flex; align-items: baseline; justify-content: center;
+      gap: 1.5px; padding: 1px 4px; border-radius: 999px;
+      max-width: 96%; white-space: nowrap; /* 严禁折行：整数/小数都留在同一行 */
+    }
+    .shift-pill .shift-type { font-size: 10px; font-weight: 600; line-height: 1; }
+    .shift-pill .shift-time {
+      font-size: 10px; font-weight: 600; line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .shift-night { background-color: #eef2ff; color: #4f46e5; }
+    .shift-day   { background-color: #fff7ed; color: #ea580c; }
+    .status-text { font-size: 11px; color: #9ca3af; }
+    .status-text.sky { color: #0ea5e9; }
+    .status-text.empty { color: #d1d5db; }
+    .status-text.rest { color: #9ca3af; }
+
     /* 深色看板落影：带品牌色调（靛蓝），比中性黑更贴合渐变底，
        让下方浅色卡片读起来像"从看板底下滑出"而不是被硬线切开。 */
     .board-shadow {
@@ -108,6 +148,11 @@
       font-size: 11px; line-height: 1.25; font-weight: 600;
       white-space: nowrap;
     }
+
+    /* 字重阶梯：标题 fw-7 / 数值 fw-6 / 辅助 fw-4，拉大对比 */
+    .fw-7 { font-weight: 700; }
+    .fw-6 { font-weight: 600; }
+    .fw-4 { font-weight: 400; }
 
     .drawer-enter-active, .drawer-leave-active { transition: transform .25s cubic-bezier(.16,1,.3,1), opacity .25s ease; }
     .drawer-enter-from, .drawer-leave-to { transform: translateY(100%); opacity: 0; }
@@ -164,8 +209,10 @@
         <span class="text-base font-bold tracking-wide font-mono-num">{{ currentYear }}年{{ currentMonth + 1 }}月</span>
         <button @click="changeMonth(1)" class="w-7 h-7 rounded-full hover:bg-white/20 active:scale-90 transition flex items-center justify-center"><svg class="ico text-base"><use href="#i-chevron-right" /></svg></button>
       </div>
-      <button v-if="!isCurrentMonth" @click="goToday" class="pill active:scale-95 transition">回今天</button>
-      <span v-else class="text-[11px] text-indigo-100/70 font-medium">{{ tab === 'calendar' ? '打卡' : '汇总' }}</span>
+      <div class="flex items-center space-x-1">
+        <button v-if="tab !== 'settings' && !isCurrentMonth" @click="goToday" class="pill active:scale-95 transition">回今天</button>
+        <button @click="tab = 'settings'" class="w-7 h-7 rounded-full hover:bg-white/20 active:scale-90 transition flex items-center justify-center" title="设置"><svg class="ico text-base"><use href="#i-settings" /></svg></button>
+      </div>
     </div>
     <!-- 设置页标题 -->
     <div v-else class="flex items-center h-7">
@@ -217,42 +264,50 @@
         <div v-for="b in firstDayOfWeek" :key="'b'+b" class="h-[64px]"></div>
 
         <div v-for="day in daysInMonth" :key="day" @click="openDayDrawer(day)"
-          class="h-[64px] rounded-xl p-1 flex flex-col justify-between border relative active:scale-95 transition cursor-pointer overflow-hidden"
+          class="h-[64px] rounded-xl p-0.5 relative active:scale-95 transition cursor-pointer overflow-hidden"
           :class="cellClass(day)">
-          <div class="flex justify-between items-start">
-            <!-- 今天：品牌色实心圆标 -->
-            <span v-if="isToday(day)" class="w-[17px] h-[17px] rounded-full bg-indigo-600 text-white text-[10px] font-bold flex items-center justify-center font-mono-num shrink-0">{{ day }}</span>
-            <span v-else class="text-[11px] font-bold leading-none font-mono-num text-slate-500 pl-1 pt-1">{{ day }}</span>
-            <span class="flex space-x-0.5 pt-1 pr-0.5">
-              <span v-if="getRecord(day)?.status === 'work' && getRecord(day)?.contraband_found > 0" class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              <span v-if="hasPenalty(day)" class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-            </span>
+          <div class="calendar-cell">
+            <!-- 顶部：日期 + 右上状态点（查获绿 / 处罚玫红） -->
+            <div class="cell-top">
+              <span v-if="isToday(day)" class="w-[17px] h-[17px] rounded-full bg-indigo-600 text-white text-[10px] font-bold flex items-center justify-center font-mono-num shrink-0">{{ day }}</span>
+              <span v-else class="day-num">{{ day }}</span>
+              <span class="flex space-x-0.5 pt-0.5">
+                <span v-if="getRecord(day)?.status === 'work' && getRecord(day)?.contraband_found > 0" class="event-dot"></span>
+                <span v-if="hasPenalty(day)" class="event-dot rose"></span>
+              </span>
+            </div>
+            <!-- 底部：班次+工时胶囊（白=橙/夜=靛蓝），休/假/空为纯文字 -->
+            <div class="cell-bottom">
+              <span v-if="getRecord(day)?.status === 'work'"
+                class="shift-pill"
+                :class="getRecord(day).shift_type === 'day' ? 'shift-day' : 'shift-night'">
+                <span class="shift-type">{{ getRecord(day).shift_type === 'day' ? '白' : '夜' }}</span>
+                <span class="shift-time">{{ fmt(getRecord(day).hours) }}h</span>
+              </span>
+              <span v-else-if="getRecord(day)?.status === 'rest'" class="status-text rest">休</span>
+              <span v-else-if="getRecord(day)?.status === 'leave'" class="status-text sky">假</span>
+              <span v-else class="status-text empty">—</span>
+            </div>
           </div>
-          <!-- 徽章统一撑满格宽、统一高度：班次靠左、工时靠右，小数位占固定槽位，整数与 .5 不会错位 -->
-          <template v-if="getRecord(day)?.status === 'work'">
-            <span class="flex items-center justify-between w-full px-1.5 py-[3px] rounded-md text-[10px] font-bold leading-none"
-              :class="getRecord(day).shift_type === 'day' ? 'bg-sky-100 text-sky-700' : 'bg-violet-100 text-violet-700'">
-              <span>{{ getRecord(day).shift_type === 'day' ? '白' : '夜' }}</span>
-              <span class="font-mono-num">{{ hInt(getRecord(day).hours) }}<span class="inline-block w-[8px] text-left">{{ hFrac(getRecord(day).hours) }}</span></span>
-            </span>
-          </template>
-          <span v-else-if="getRecord(day)?.status === 'rest'" class="block w-full px-1.5 py-[3px] rounded-md text-[10px] font-bold leading-none text-center bg-slate-200/80 text-slate-500">休</span>
-          <span v-else-if="getRecord(day)?.status === 'leave'" class="block w-full px-1.5 py-[3px] rounded-md text-[10px] font-bold leading-none text-center bg-amber-100 text-amber-700">假</span>
-          <span v-else class="block w-full px-1 py-[3px] text-[10px] leading-none text-center text-slate-300">—</span>
         </div>
       </div>
 
-      <!-- 虚线含义说明（取代原来两行带色条的长文本图例） -->
-      <div class="mt-3.5 flex items-center justify-center gap-2 text-[10px] text-slate-400">
-        <span class="inline-flex items-center gap-1.5">
-          <span class="w-4 border-t-2 border-dashed border-slate-300 inline-block"></span>
-          <span>线上 → 当月<b class="font-mono-num font-semibold text-slate-500">{{ settings.payDayA }}</b>号发</span>
-        </span>
-        <span class="text-slate-200">·</span>
-        <span>线下 → 次月<b class="font-mono-num font-semibold text-slate-500">{{ settings.payDayB }}</b>号发</span>
+      <!-- 虚线含义说明：可展开图例（默认收叠，点击展开） -->
+      <button @click="legendOpen = !legendOpen" class="mt-3.5 mx-auto flex items-center justify-center gap-1 text-[10px] text-slate-400 active:scale-95 transition select-none">
+        <svg class="ico text-[13px]" :class="legendOpen ? 'rotate-180' : ''" style="transition:transform .2s ease"><use href="#i-chevron-down" /></svg>
+        <span>图例</span>
+      </button>
+      <div v-show="legendOpen" class="mt-1.5 space-y-1">
+        <div class="flex items-center justify-center gap-2 text-[10px] text-slate-400">
+          <span class="inline-flex items-center gap-1.5">
+            <span class="w-4 border-t-2 border-dashed border-slate-300 inline-block"></span>
+            <span>线上 → 当月<b class="font-mono-num font-semibold text-slate-500">{{ settings.payDayA }}</b>号发</span>
+          </span>
+          <span class="text-slate-200">·</span>
+          <span>线下 → 次月<b class="font-mono-num font-semibold text-slate-500">{{ settings.payDayB }}</b>号发</span>
+        </div>
+        <p class="text-center text-[10px] text-slate-300">奖励与处罚统一在次月{{ settings.payDayB }}号结算</p>
       </div>
-
-      <p class="mt-1.5 text-center text-[10px] text-slate-300">奖励与处罚统一在次月{{ settings.payDayB }}号结算</p>
     </section>
 
     <!-- ========== ② 汇总 ========== -->
@@ -683,6 +738,8 @@ createApp({
     const selectedDay = ref(today.getDate());
 
     const isDrawerOpen = ref(false);
+    const legendOpen = ref(false);
+    const settingsOpen = ref(false);
     const copied = ref(false);
     const dataCopied = ref(false);
     const toast = ref('');
@@ -838,9 +895,9 @@ createApp({
       if (isCutEdge(day)) cls.push('cut-edge');
       if (isToday(day)) cls.push('ring-2 ring-indigo-500/70');
       if (!r) cls.push('bg-white border-slate-100');
-      else if (r.status === 'work') cls.push(r.shift_type === 'night' ? 'bg-violet-50/70 border-violet-100' : 'bg-sky-50/70 border-sky-100');
+      else if (r.status === 'work') cls.push(r.shift_type === 'night' ? 'bg-indigo-50/70 border-indigo-100' : 'bg-amber-50/70 border-amber-100');
       else if (r.status === 'rest') cls.push('bg-slate-100/70 border-slate-200');
-      else if (r.status === 'leave') cls.push('bg-amber-50/60 border-amber-100');
+      else if (r.status === 'leave') cls.push('bg-sky-50/60 border-sky-100');
       else cls.push('bg-white border-slate-100');
       return cls;
     };
