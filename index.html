@@ -170,13 +170,15 @@
       background: #FBFCFE;
     }
 
-    /* 半透明胶囊标签（挂在深色看板上） */
+    /* 半透明胶囊标签（挂在深色看板上）。
+       flex:none + nowrap 一起用：胶囊既不被压扁也不折行，超宽时由父容器横向滚动兜底。 */
     .pill {
-      display: inline-flex; align-items: center; gap: 4px;
+      display: inline-flex; align-items: center; gap: 3.5px;
+      flex: none;
       background: rgba(255, 255, 255, .14);
       border: 1px solid rgba(255, 255, 255, .16);
       border-radius: 999px;
-      padding: 4px 10px;
+      padding: 4px 9px;
       font-size: 11px; line-height: 1.25; font-weight: 600;
       white-space: nowrap;
     }
@@ -264,8 +266,10 @@
         {{ currentMonth + 1 }}月进账 {{ money(cashTotal) }}<span class="text-indigo-100/40">（含{{ prevLabel.month + 1 }}月结转 {{ money(payoutThisB) }}）</span>
       </p>
 
-      <!-- 半透明胶囊标签 -->
-      <div class="mt-3.5 flex flex-wrap gap-1.5">
+      <!-- 半透明胶囊标签：强制单行。
+           flex-nowrap 保证不折行；overflow-x-auto + no-scrollbar 是极端长数字时的兜底（可横滑，不露滚动条）。
+           第三个标签用「收入」而非「工时收入」：coins 图标 + ¥ 已经说明是钱，省下的 2 字宽度是小屏能挤进一行的关键。 -->
+      <div class="mt-3.5 flex flex-nowrap gap-1 overflow-x-auto no-scrollbar">
         <span class="pill">
           <svg class="ico text-[12px] text-indigo-200"><use href="#i-briefcase" /></svg>
           出勤 <b class="font-mono-num font-bold">{{ monthStats.workDays }}</b><span class="text-indigo-100/60">/{{ settings.fullDays }}</span>
@@ -276,7 +280,7 @@
         </span>
         <span class="pill">
           <svg class="ico text-[12px] text-indigo-200"><use href="#i-coins" /></svg>
-          工时收入 <b class="font-mono-num font-bold text-amber-200">{{ money(monthStats.basePay) }}</b>
+          收入 <b class="font-mono-num font-bold text-amber-200">{{ money(monthStats.basePay) }}</b>
         </span>
       </div>
     </div>
