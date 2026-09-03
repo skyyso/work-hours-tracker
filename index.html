@@ -83,6 +83,28 @@
        Tailwind CDN 运行时注入的样式可能排在本文件之后，所以用 !important 压住单边颜色。 */
     .cut-edge { border-bottom: 2px dashed rgba(148, 163, 184, .55) !important; }
 
+    /* ===== 发薪日标记 =====
+       只做"标注"不做"改色"：格子底色仍归班次所有（白班橙/夜班靛蓝），
+       发薪日用内描边 + 右上角 ¥ 字符表达，避免两套语义抢同一块背景。
+       今天的 ring 优先级更高，遇到重合时只留 ¥ 角标。 */
+    .pay-ring-a { box-shadow: inset 0 0 0 1.5px rgba(79, 70, 229, .38); }
+    .pay-ring-b { box-shadow: inset 0 0 0 1.5px rgba(217, 119, 6, .40); }
+    .pay-mark {
+      font-size: 9px; font-weight: 800; line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .pay-mark.pay-a { color: #4f46e5; }
+    .pay-mark.pay-b { color: #d97706; }
+
+    /* 定稿状态标签 */
+    .stat-tag {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 10px; font-weight: 700; line-height: 1;
+      padding: 3px 7px; border-radius: 999px; white-space: nowrap;
+    }
+    .stat-draft { background: #FEF3C7; color: #B45309; }
+    .stat-final { background: #D1FAE5; color: #047857; }
+
     /* ===== 日历格胶囊结构（第三轮） =====
        班次与工时整合为紧凑胶囊，避免 hInt/hFrac 拆分小数导致的折行；
        左下实心属性点移除，仅保留右上状态点。 */
@@ -267,7 +289,8 @@
             <div class="cell-top">
               <span v-if="isToday(day)" class="w-[17px] h-[17px] rounded-full bg-indigo-600 text-white text-[10px] font-bold flex items-center justify-center font-mono-num shrink-0">{{ day }}</span>
               <span v-else class="day-num">{{ day }}</span>
-              <span class="flex space-x-0.5 pt-0.5">
+              <span class="flex items-center space-x-0.5 pt-0.5">
+                <span v-if="payDayKind(day)" class="pay-mark" :class="payDayKind(day) === 'a' ? 'pay-a' : 'pay-b'">¥</span>
                 <span v-if="getRecord(day)?.status === 'work' && getRecord(day)?.contraband_found > 0" class="event-dot"></span>
                 <span v-if="hasPenalty(day)" class="event-dot rose"></span>
               </span>
@@ -303,6 +326,11 @@
           <span>线下 → 次月<b class="font-mono-num font-semibold text-slate-500">{{ settings.payDayB }}</b>号发</span>
         </div>
         <p class="text-center text-[10px] text-slate-300">奖励与处罚统一在次月{{ settings.payDayB }}号结算</p>
+        <div class="flex items-center justify-center gap-2.5 text-[10px] text-slate-400 pt-0.5">
+          <span class="inline-flex items-center gap-1"><b class="pay-mark pay-a">¥</b>当月{{ settings.payDayA }}号发薪</span>
+          <span class="text-slate-200">·</span>
+          <span class="inline-flex items-center gap-1"><b class="pay-mark pay-b">¥</b>当月{{ settings.payDayB }}号发薪</span>
+        </div>
       </div>
     </section>
 
@@ -316,12 +344,26 @@
           <span class="text-[10px] font-normal text-slate-400 font-mono-num">时薪 {{ settings.rate }} 元/h</span>
         </div>
         <div class="divide-y divide-slate-100">
-          <div class="flex items-center justify-between px-5 py-3.5">
-            <div class="min-w-0 pr-2">
-              <p class="text-xs font-semibold text-slate-700">{{ currentMonth + 1 }}月{{ settings.payDayB }}日</p>
-              <p class="text-[10px] font-normal text-slate-400 mt-0.5">{{ prevLabel.month + 1 }}月下半月 {{ fmt(prevStats.h2) }}h + 奖惩 {{ signed(prevStats.adjustNet) }}</p>
+          <div class="px-5 py-3.5">
+            <div class="flex items-center justify-between">
+              <div class="min-w-0 pr-2">
+                <p class="text-xs font-semibold text-slate-700">{{ currentMonth + 1 }}月{{ settings.payDayB }}日</p>
+                <p class="text-[10px] font-normal text-slate-400 mt-0.5">{{ prevLabel.month + 1 }}月下半月 {{ fmt(prevStats.h2) }}h + 奖惩 {{ signed(prevStats.adjustNet) }}</p>
+              </div>
+              <span class="text-[17px] font-bold text-slate-800 shrink-0 font-mono-num">{{ money(payoutThisB) }}</span>
             </div>
-            <span class="text-[17px] font-bold text-slate-800 shrink-0 font-mono-num">{{ money(payoutThisB) }}</span>
+            <!-- 上月奖惩需在本月 1–2 号汇总申报，所以把上月的定稿入口直接挂在这笔到账下面 -->
+            <div class="mt-2.5 flex items-center justify-between gap-2">
+              <span class="stat-tag" :class="prevStats.finalized ? 'stat-final' : 'stat-draft'">
+                <svg class="ico text-[11px]"><use :href="prevStats.finalized ? '#i-check' : '#i-hourglass'" /></svg>
+                {{ prevLabel.month + 1 }}月奖惩{{ prevStats.finalized ? '已定稿' : (prevStats.adjustStatus === 'draft' ? '草稿未定稿' : '待申报') }}
+              </span>
+              <button @click="openAdjust(prevLabel.year, prevLabel.month)"
+                class="px-3 py-1.5 rounded-xl text-[11px] font-bold active:scale-95 transition flex items-center gap-1.5"
+                :class="prevStats.finalized ? 'bg-slate-100 text-slate-600' : 'bg-amber-500 text-white shadow-sm'">
+                <svg class="ico text-[13px]"><use href="#i-notebook-pen" /></svg>{{ prevStats.finalized ? '查看/改稿' : '核对修正' }}
+              </button>
+            </div>
           </div>
           <div class="flex items-center justify-between px-5 py-3.5">
             <div class="min-w-0 pr-2">
@@ -368,10 +410,6 @@
         <p class="text-[10px] font-normal text-slate-400 mb-2.5">以下金额不计入当月工资</p>
         <div class="space-y-1.5 text-xs">
           <div class="flex justify-between items-center">
-            <span class="text-slate-500">满勤奖<span class="text-slate-400">{{ monthStats.workDays >= settings.fullDays ? '（' + fmt(monthStats.totalHours) + 'h×' + settings.fullBonusPerHour + '）' : '（未达' + settings.fullDays + '天）' }}</span></span>
-            <span class="amt" :class="monthStats.fullBonus > 0 ? 'amt-pos' : 'amt-zero'">{{ monthStats.fullBonus > 0 ? '+' + money(monthStats.fullBonus) : '¥0' }}</span>
-          </div>
-          <div class="flex justify-between items-center">
             <span class="text-slate-500">查获奖励<span class="text-slate-400">（{{ monthStats.foundCount }}件）</span></span>
             <span class="amt" :class="monthStats.foundBonus > 0 ? 'amt-pos' : 'amt-zero'">{{ monthStats.foundBonus > 0 ? '+' + money(monthStats.foundBonus) : '¥0' }}</span>
           </div>
@@ -383,10 +421,48 @@
             <span class="text-slate-500">其他扣款</span>
             <span class="amt" :class="monthStats.otherPenalties > 0 ? 'amt-neg' : 'amt-zero'">{{ monthStats.otherPenalties > 0 ? '-' + money(monthStats.otherPenalties) : '¥0' }}</span>
           </div>
+
+          <!-- 待申报小计：这是次月 1–2 号需要汇总上报、并可能被审核改数的部分 -->
+          <div class="flex justify-between items-center pt-2 border-t border-slate-100">
+            <span class="text-slate-500 flex items-center gap-1.5">
+              日常累计
+              <span class="text-[10px] text-slate-400">（待申报）</span>
+            </span>
+            <span class="amt" :class="monthStats.rawReview > 0 ? 'amt-pos' : (monthStats.rawReview < 0 ? 'amt-neg' : 'amt-zero')">{{ signed(monthStats.rawReview) }}</span>
+          </div>
+
+          <div v-if="monthStats.finalized" class="flex justify-between items-center">
+            <span class="text-slate-500 flex items-center gap-1.5">
+              审核终稿
+              <span v-if="monthStats.reviewDelta !== 0" class="text-[10px]" :class="monthStats.reviewDelta > 0 ? 'text-emerald-600' : 'text-rose-500'">
+                {{ monthStats.reviewDelta > 0 ? '上调' : '下调' }}{{ money(Math.abs(monthStats.reviewDelta)) }}
+              </span>
+            </span>
+            <span class="amt" :class="monthStats.reviewAmount > 0 ? 'amt-pos' : (monthStats.reviewAmount < 0 ? 'amt-neg' : 'amt-zero')">{{ signed(monthStats.reviewAmount) }}</span>
+          </div>
+
+          <div class="flex justify-between items-center">
+            <span class="text-slate-500">满勤奖<span class="text-slate-400">{{ monthStats.workDays >= settings.fullDays ? '（' + fmt(monthStats.totalHours) + 'h×' + settings.fullBonusPerHour + '）' : '（未达' + settings.fullDays + '天）' }}</span></span>
+            <span class="amt" :class="monthStats.fullBonus > 0 ? 'amt-pos' : 'amt-zero'">{{ monthStats.fullBonus > 0 ? '+' + money(monthStats.fullBonus) : '¥0' }}</span>
+          </div>
+
           <div class="flex justify-between items-center pt-2 border-t border-slate-100">
             <span class="font-semibold text-slate-600">奖惩净额</span>
             <span class="amt text-[12px]" :class="monthStats.adjustNet > 0 ? 'amt-pos' : (monthStats.adjustNet < 0 ? 'amt-neg' : 'amt-zero')">{{ signed(monthStats.adjustNet) }}</span>
           </div>
+        </div>
+
+        <!-- 修正入口：日常记录通道不变，这里只改「待申报」总额 -->
+        <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
+          <span class="stat-tag" :class="monthStats.finalized ? 'stat-final' : 'stat-draft'">
+            <svg class="ico text-[11px]"><use :href="monthStats.finalized ? '#i-check' : '#i-hourglass'" /></svg>
+            {{ monthStats.finalized ? '已定稿' : (monthStats.adjustStatus === 'draft' ? '草稿未定稿' : '预估·未申报') }}
+          </span>
+          <button @click="openAdjust(currentYear, currentMonth)"
+            class="px-3 py-1.5 rounded-xl text-[11px] font-bold active:scale-95 transition flex items-center gap-1.5"
+            :class="monthStats.finalized ? 'bg-slate-100 text-slate-600' : 'bg-indigo-600 text-white shadow-sm'">
+            <svg class="ico text-[13px]"><use href="#i-notebook-pen" /></svg>{{ monthStats.finalized ? '查看/改稿' : '核对修正' }}
+          </button>
         </div>
         <div v-if="penaltyDetails.length" class="mt-3 pt-2.5 border-t border-slate-100 space-y-1">
           <p class="text-[10px] font-bold text-slate-400 mb-1">处罚明细</p>
@@ -406,6 +482,10 @@
         <div class="space-y-1 text-[11px] text-amber-800/80">
           <div class="flex justify-between items-center"><span>本月下半月工时 {{ fmt(monthStats.h2) }}h</span><span class="font-mono-num font-semibold">{{ money(monthStats.h2 * settings.rate) }}</span></div>
           <div class="flex justify-between items-center"><span>本月奖惩结算</span><span class="amt" :class="monthStats.adjustNet > 0 ? 'amt-pos' : (monthStats.adjustNet < 0 ? 'amt-neg' : 'amt-zero')">{{ signed(monthStats.adjustNet) }}</span></div>
+          <div class="flex justify-between items-center pt-0.5">
+            <span class="text-amber-700/70">奖惩口径</span>
+            <span class="font-semibold" :class="monthStats.finalized ? 'text-emerald-700' : 'text-amber-700'">{{ monthStats.finalized ? '已定稿' : '预估（未申报）' }}</span>
+          </div>
         </div>
         <p v-if="monthStats.h2 * settings.rate + monthStats.adjustNet < 0" class="mt-2 text-[10px] text-rose-600 font-bold flex items-start gap-1"><svg class="ico text-[13px] mt-px"><use href="#i-triangle-alert" /></svg><span>处罚已超过下半月工时收入，实发按 ¥0 计，差额可能顺延</span></p>
       </div>
@@ -591,6 +671,19 @@
           <button @click="isDrawerOpen = false" class="text-slate-300 hover:text-slate-500 leading-none px-1 pt-0.5"><svg class="ico text-lg"><use href="#i-x" /></svg></button>
         </div>
 
+        <!-- 发薪日到账横幅：只展示不阻断打卡 -->
+        <div v-if="selectedPayInfo" class="mb-4 rounded-2xl px-4 py-3 flex items-center justify-between gap-3"
+          :class="selectedPayInfo.kind === 'a' ? 'bg-indigo-50 border border-indigo-100' : 'bg-amber-50 border border-amber-100'">
+          <div class="min-w-0">
+            <p class="text-[11px] font-bold flex items-center gap-1.5" :class="selectedPayInfo.kind === 'a' ? 'text-indigo-700' : 'text-amber-800'">
+              <svg class="ico text-[14px]"><use href="#i-wallet" /></svg>今日到账
+              <span v-if="!selectedPayInfo.finalized" class="stat-tag stat-draft">奖惩待定稿</span>
+            </p>
+            <p class="text-[10px] mt-0.5 truncate" :class="selectedPayInfo.kind === 'a' ? 'text-indigo-500/80' : 'text-amber-700/80'">{{ selectedPayInfo.desc }}</p>
+          </div>
+          <span class="text-base font-black shrink-0 font-mono-num" :class="selectedPayInfo.kind === 'a' ? 'text-indigo-700' : 'text-amber-700'">{{ money(selectedPayInfo.amount) }}</span>
+        </div>
+
         <div class="grid grid-cols-3 gap-2 mb-4">
           <button v-for="st in statusOptions" :key="st.id" @click="draftRecord.status = st.id"
             class="py-2.5 rounded-xl font-bold text-xs border-2 transition flex items-center justify-center gap-1.5"
@@ -664,6 +757,93 @@
     </div>
   </transition>
 
+  <!-- ===== 奖惩核对/修正抽屉 ===== -->
+  <transition name="drawer">
+    <div v-if="adjustOpen" class="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm" @click.self="closeAdjust">
+      <div class="w-full max-w-md bg-white rounded-t-3xl px-5 pt-5 pb-6 shadow-2xl overflow-y-auto max-h-[88vh] no-scrollbar">
+
+        <div class="flex justify-between items-start mb-4 pb-3 border-b border-slate-100">
+          <div>
+            <h3 class="text-base font-bold text-slate-800 flex items-center gap-1.5">
+              <svg class="ico text-[18px] text-indigo-600"><use href="#i-shield-alert" /></svg>
+              {{ adjustTarget.year }}年{{ adjustTarget.month + 1 }}月 奖惩核对
+            </h3>
+            <p class="text-[10px] text-slate-400 mt-0.5">次月1–2号汇总申报，以审核终稿为准 · 随{{ settings.payDayB }}号工资发放</p>
+          </div>
+          <button @click="closeAdjust" class="text-slate-300 hover:text-slate-500 leading-none px-1 pt-0.5"><svg class="ico text-lg"><use href="#i-x" /></svg></button>
+        </div>
+
+        <!-- 日常累计（只读） -->
+        <div class="inset bg-slate-50 border border-slate-200/70 p-3.5 mb-3">
+          <p class="text-[11px] font-bold text-slate-500 mb-2 flex items-center gap-1.5">
+            <svg class="ico text-[13px] text-slate-400"><use href="#i-notebook-pen" /></svg>日常打卡累计（只读）
+          </p>
+          <div class="space-y-1 text-[11px]">
+            <div class="flex justify-between"><span class="text-slate-500">查获奖励（{{ adjustStats.foundCount }}件）</span><span class="amt" :class="adjustStats.foundBonus > 0 ? 'amt-pos' : 'amt-zero'">{{ adjustStats.foundBonus > 0 ? '+' + money(adjustStats.foundBonus) : '¥0' }}</span></div>
+            <div class="flex justify-between"><span class="text-slate-500">漏查处罚（{{ adjustStats.missedCount }}件）</span><span class="amt" :class="adjustStats.missedPenalty > 0 ? 'amt-neg' : 'amt-zero'">{{ adjustStats.missedPenalty > 0 ? '-' + money(adjustStats.missedPenalty) : '¥0' }}</span></div>
+            <div class="flex justify-between"><span class="text-slate-500">其他扣款</span><span class="amt" :class="adjustStats.otherPenalties > 0 ? 'amt-neg' : 'amt-zero'">{{ adjustStats.otherPenalties > 0 ? '-' + money(adjustStats.otherPenalties) : '¥0' }}</span></div>
+            <div class="flex justify-between pt-1.5 mt-1 border-t border-slate-200/80">
+              <span class="font-bold text-slate-600">累计小计</span>
+              <span class="amt text-[12px]" :class="adjustStats.rawReview > 0 ? 'amt-pos' : (adjustStats.rawReview < 0 ? 'amt-neg' : 'amt-zero')">{{ signed(adjustStats.rawReview) }}</span>
+            </div>
+          </div>
+          <p class="text-[10px] text-slate-400 mt-2 leading-relaxed">满勤奖由出勤天数客观判定，不在核对范围内（当前 {{ adjustStats.workDays }}/{{ settings.fullDays }} 天，{{ adjustStats.fullBonus > 0 ? '+' + money(adjustStats.fullBonus) : '未达标' }}）。</p>
+        </div>
+
+        <!-- 审核终稿（可编辑） -->
+        <div class="inset bg-indigo-50/60 border border-indigo-100 p-3.5 mb-3">
+          <p class="text-[11px] font-bold text-indigo-700 mb-2 flex items-center gap-1.5">
+            <svg class="ico text-[13px]"><use href="#i-award" /></svg>审核终稿金额
+          </p>
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-bold text-slate-500">¥</span>
+            <input type="number" step="0.5" v-model.number="adjustDraft.finalAmount" placeholder="填写最终审核金额"
+              class="flex-1 bg-white border border-indigo-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-800 outline-none focus:border-indigo-500 font-mono-num" />
+            <button @click="adjustDraft.finalAmount = Math.round(adjustStats.rawReview * 10) / 10"
+              class="px-2.5 py-2 bg-white border border-indigo-200 rounded-xl text-[10px] font-bold text-indigo-600 active:scale-95 transition shrink-0">按累计</button>
+          </div>
+          <p class="text-[10px] text-indigo-500/80 mt-1.5">奖多于罚填正数，罚多于奖填负数。例：累计 {{ signed(adjustStats.rawReview) }}，审核只认 80 就填 80。</p>
+
+          <div v-if="adjustDelta !== null && adjustDelta !== 0" class="mt-2.5 pt-2.5 border-t border-indigo-100 flex justify-between items-center text-[11px]">
+            <span class="text-slate-500">与累计差额</span>
+            <span class="amt" :class="adjustDelta > 0 ? 'amt-pos' : 'amt-neg'">{{ adjustDelta > 0 ? '上调 +' : '下调 -' }}{{ money(Math.abs(adjustDelta)) }}</span>
+          </div>
+
+          <input type="text" v-model="adjustDraft.note" maxlength="60" placeholder="备注（如：与班长核对后确认）"
+            class="w-full mt-2.5 bg-white border border-indigo-200 rounded-xl px-3 py-2 text-[11px] text-slate-700 outline-none focus:border-indigo-500" />
+        </div>
+
+        <!-- 生效后的口径预览 -->
+        <div class="inset bg-amber-50/70 border border-amber-100 p-3.5 mb-4">
+          <div class="flex justify-between items-center text-[11px]">
+            <span class="text-amber-800/80">定稿后奖惩净额（含满勤奖）</span>
+            <span class="amt text-[12px]" :class="(Number(adjustDraft.finalAmount) || 0) + adjustStats.fullBonus > 0 ? 'amt-pos' : ((Number(adjustDraft.finalAmount) || 0) + adjustStats.fullBonus < 0 ? 'amt-neg' : 'amt-zero')">{{ signed((Number(adjustDraft.finalAmount) || 0) + adjustStats.fullBonus) }}</span>
+          </div>
+          <p class="text-[10px] text-amber-700/70 mt-1">该金额将并入 {{ adjustTarget.month === 11 ? adjustTarget.year + 1 : adjustTarget.year }}年{{ adjustTarget.month === 11 ? 1 : adjustTarget.month + 2 }}月{{ settings.payDayB }}号发放。</p>
+        </div>
+
+        <div v-if="adjustStats.finalized" class="flex items-center gap-1.5 mb-3 text-[10px] text-emerald-700">
+          <svg class="ico text-[13px]"><use href="#i-check" /></svg>
+          <span>已于 {{ (adjustStats.finalizedAt || '').slice(0, 16).replace('T', ' ') }} 定稿</span>
+        </div>
+
+        <div class="flex space-x-2.5">
+          <button v-if="adjustStats.adjustStatus" @click="unfinalizeAdjust"
+            class="px-4 py-3 bg-slate-100 text-slate-500 rounded-xl text-xs font-bold active:scale-95 transition flex items-center gap-1.5">
+            <svg class="ico text-sm"><use href="#i-rotate-ccw" /></svg>撤销
+          </button>
+          <button @click="saveAdjustDraft"
+            class="px-4 py-3 bg-slate-100 text-slate-600 rounded-xl text-xs font-bold active:scale-95 transition">存草稿</button>
+          <button @click="finalizeAdjust"
+            class="flex-1 py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md active:scale-95 transition flex items-center justify-center gap-1.5">
+            <svg class="ico text-base"><use href="#i-check" /></svg>确认定稿
+          </button>
+        </div>
+        <p class="text-center text-[10px] text-slate-400 mt-2.5">存草稿不改变发放口径；定稿后按终稿金额计算。日常打卡记录不受影响。</p>
+      </div>
+    </div>
+  </transition>
+
   <!-- ===== 轻提示 ===== -->
   <transition name="fade">
     <div v-if="toast" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-[60] bg-slate-800/95 text-white text-xs font-medium px-4 py-2.5 rounded-full shadow-lg whitespace-nowrap">
@@ -694,6 +874,12 @@ createApp({
 
     const settings = reactive({ ...DEFAULTS });
     const records = ref({});
+
+    // 月度奖惩终稿：key = 'YYYY-MM'
+    // { status:'draft'|'final', finalAmount:Number|null, note:String, finalizedAt:ISOString }
+    // 次月 1–2 号汇总申报后，实际审核金额可能与日常累计不同（如累计 100、审核只认 80）。
+    // 定稿后所有发放口径都以终稿为准，日常每日记录通道保持不变、也不锁定。
+    const monthAdjust = ref({});
 
     // ===== 工时口径：6–12h，0.5 步进 =====
     const HOUR_MIN = 6, HOUR_MAX = 12, HOUR_STEP = 0.5;
@@ -728,6 +914,10 @@ createApp({
       foundBonus: sn(settings.foundBonus, DEFAULTS.foundBonus),
       missedPenalty: sn(settings.missedPenalty, DEFAULTS.missedPenalty),
       cutoff: Math.min(28, Math.max(1, Math.round(sn(settings.cutoff, DEFAULTS.cutoff)))),
+      // payDayA/payDayB 原本只用于文案展示，现在参与日历发薪日判定，必须进 cfg 做同样的洗值，
+      // 否则 payDayKind() 拿到 undefined，比较永远不命中，角标与内描边都不会出现。
+      payDayA: Math.min(31, Math.max(1, Math.round(sn(settings.payDayA, DEFAULTS.payDayA)))),
+      payDayB: Math.min(31, Math.max(1, Math.round(sn(settings.payDayB, DEFAULTS.payDayB)))),
       dayHours: clampHours(sn(settings.dayHours, DEFAULTS.dayHours), DEFAULTS.dayHours),
       nightHours: clampHours(sn(settings.nightHours, DEFAULTS.nightHours), DEFAULTS.nightHours)
     }));
@@ -781,6 +971,8 @@ createApp({
     const firstDayOfWeek = computed(() => new Date(currentYear.value, currentMonth.value, 1).getDay());
     const monthPrefix = (y, m) => `${y}-${String(m + 1).padStart(2, '0')}-`;
     const keyOf = (y, m, d) => monthPrefix(y, m) + String(d).padStart(2, '0');
+    const monthKeyOf = (y, m) => `${y}-${String(m + 1).padStart(2, '0')}`;
+    const getMonthAdjust = (y, m) => monthAdjust.value[monthKeyOf(y, m)] || null;
     const getRecord = (day) => records.value[keyOf(currentYear.value, currentMonth.value, day)];
     const prevMonthOf = (y, m) => m === 0 ? { year: y - 1, month: 11 } : { year: y, month: m - 1 };
     const nextMonthOf = (y, m) => m === 11 ? { year: y + 1, month: 0 } : { year: y, month: m + 1 };
@@ -840,16 +1032,29 @@ createApp({
       }
 
       const totalHours = h1 + h2;
-      // 奖惩池：满勤奖也算奖励，全部挂账，次月初出结果并随次月工资发放
+      // 满勤奖只由出勤天数客观判定，不参与人工审核修正
       const fullBonus = workDays >= c.fullDays ? totalHours * c.fullBonusPerHour : 0;
       const foundBonus = foundCount * c.foundBonus;
       const missedPenalty = missedCount * c.missedPenalty;
-      const adjustNet = fullBonus + foundBonus - missedPenalty - otherPenalties;
+
+      // 待申报奖惩 = 查获 - 漏查 - 其他扣款（不含满勤奖），这是需要次月初核对的部分
+      const rawReview = foundBonus - missedPenalty - otherPenalties;
+
+      // 已定稿 → 用审核终稿金额；未定稿 → 用日常累计值（预估）
+      const adj = getMonthAdjust(year, month);
+      const finalized = !!(adj && adj.status === 'final' && Number.isFinite(Number(adj.finalAmount)));
+      const reviewAmount = finalized ? Number(adj.finalAmount) : rawReview;
+      const reviewDelta = finalized ? reviewAmount - rawReview : 0;
+      const adjustNet = fullBonus + reviewAmount;
 
       return {
         h1, h2, totalHours, workDays, dayShifts, nightShifts, restDays, leaveDays,
         foundCount, missedCount, otherPenalties,
         fullBonus, foundBonus, missedPenalty, adjustNet,
+        rawReview, reviewAmount, reviewDelta, finalized,
+        adjustStatus: adj ? adj.status : null,
+        adjustNote: adj && adj.note ? adj.note : '',
+        finalizedAt: adj && adj.finalizedAt ? adj.finalizedAt : '',
         basePay: totalHours * c.rate
       };
     };
@@ -896,6 +1101,35 @@ createApp({
       return !!r && r.status === 'work' && (Number(r.contraband_missed || 0) > 0 || Number(r.other_penalty || 0) > 0);
     };
 
+    // 发薪日判定：'a' = 当月 payDayA（上半月工时，线上）；'b' = 当月 payDayB（上月下半月工时 + 上月奖惩，线下）
+    // 只做统计标注，不处理"遇周末顺延"，实际到账日以单位为准。
+    const payDayKind = (day) => {
+      const c = cfg.value;
+      if (day === c.payDayA) return 'a';
+      if (day === c.payDayB) return 'b';
+      return null;
+    };
+
+    // 选中日如果是发薪日，打卡抽屉顶部展示该笔到账（不打断打卡主流程）
+    const selectedPayInfo = computed(() => {
+      const kind = payDayKind(selectedDay.value);
+      if (!kind) return null;
+      if (kind === 'a') {
+        return {
+          kind: 'a',
+          amount: payoutThisA.value,
+          desc: `本月上半月 ${fmt(monthStats.value.h1)}h · 纯工时`,
+          finalized: true
+        };
+      }
+      return {
+        kind: 'b',
+        amount: payoutThisB.value,
+        desc: `${prevLabel.value.month + 1}月下半月 ${fmt(prevStats.value.h2)}h + 奖惩 ${signed(prevStats.value.adjustNet)}`,
+        finalized: prevStats.value.finalized
+      };
+    });
+
     // 上下半月分界格：7 列网格里 day+7 就在 day 正下方，
     // 所以给 cutoff-6 … cutoff 这 7 格加底虚线，正好描出一条完整分界线，
     // 而且不需要往网格里插额外元素，星期对齐不会被打买。
@@ -908,7 +1142,13 @@ createApp({
       const r = getRecord(day);
       const cls = [];
       if (isCutEdge(day)) cls.push('cut-edge');
+      // 今天的 ring 与发薪日内描边都是 box-shadow，会互相覆盖，
+      // 所以重合时只保留今天的 ring，发薪日仍由右上角 ¥ 角标表达。
       if (isToday(day)) cls.push('ring-2 ring-indigo-500/70');
+      else {
+        const pk = payDayKind(day);
+        if (pk) cls.push(pk === 'a' ? 'pay-ring-a' : 'pay-ring-b');
+      }
       if (!r) cls.push('bg-white border-slate-100');
       else if (r.status === 'work') cls.push(r.shift_type === 'night' ? 'bg-indigo-50/70 border-indigo-100' : 'bg-amber-50/70 border-amber-100');
       else if (r.status === 'rest') cls.push('bg-slate-100/70 border-slate-200');
@@ -938,6 +1178,70 @@ createApp({
 
     const openSettings = () => { settingsOpen.value = true; };
     const closeSettings = () => { settingsOpen.value = false; };
+
+    // ===== 奖惩终稿修正入口 =====
+    // 日常每日记录通道不受影响；这里只覆盖"待申报奖惩总金额"。
+    // 场景：累计 100，次月初审核下来只认 80 → 定稿为 80。
+    const adjustOpen = ref(false);
+    const adjustTarget = ref({ year: today.getFullYear(), month: today.getMonth() });
+    const adjustDraft = ref({ finalAmount: null, note: '' });
+
+    const adjustStats = computed(() => aggregateMonth(adjustTarget.value.year, adjustTarget.value.month));
+    const adjustDelta = computed(() => {
+      const v = Number(adjustDraft.value.finalAmount);
+      if (!Number.isFinite(v)) return null;
+      return v - adjustStats.value.rawReview;
+    });
+
+    const persistAdjust = () => localStorage.setItem('work_month_adjust', JSON.stringify(monthAdjust.value));
+
+    const openAdjust = (year, month) => {
+      adjustTarget.value = { year, month };
+      const cur = getMonthAdjust(year, month);
+      const raw = aggregateMonth(year, month).rawReview;
+      adjustDraft.value = {
+        // 首次打开预填日常累计值，方便在它基础上改
+        finalAmount: cur && Number.isFinite(Number(cur.finalAmount)) ? Number(cur.finalAmount) : Math.round(raw * 10) / 10,
+        note: cur && cur.note ? cur.note : ''
+      };
+      adjustOpen.value = true;
+    };
+    const closeAdjust = () => { adjustOpen.value = false; };
+
+    const writeAdjust = (status) => {
+      const t = adjustTarget.value;
+      const v = Number(adjustDraft.value.finalAmount);
+      if (!Number.isFinite(v)) { showToast('请先填写终稿金额'); return false; }
+      monthAdjust.value[monthKeyOf(t.year, t.month)] = {
+        status,
+        finalAmount: v,
+        note: String(adjustDraft.value.note || '').slice(0, 60),
+        finalizedAt: status === 'final' ? new Date().toISOString() : ''
+      };
+      persistAdjust();
+      return true;
+    };
+
+    const saveAdjustDraft = () => {
+      if (!writeAdjust('draft')) return;
+      adjustOpen.value = false;
+      showToast('已存为草稿，尚未生效');
+    };
+
+    const finalizeAdjust = () => {
+      if (!writeAdjust('final')) return;
+      adjustOpen.value = false;
+      if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(30);
+      showToast(`已定稿 ${adjustTarget.value.month + 1}月奖惩`);
+    };
+
+    const unfinalizeAdjust = () => {
+      const t = adjustTarget.value;
+      delete monthAdjust.value[monthKeyOf(t.year, t.month)];
+      persistAdjust();
+      adjustOpen.value = false;
+      showToast('已撑销定稿，恢复日常累计口径');
+    };
 
     const selectShift = (type) => {
       draftRecord.value.shift_type = type;
@@ -1018,10 +1322,11 @@ createApp({
 
     const bundle = () => JSON.stringify({
       app: 'work-hours-tracker',
-      version: 2,
+      version: 3,
       exportedAt: new Date().toISOString(),
       settings: { ...settings },
-      records: records.value
+      records: records.value,
+      monthAdjust: monthAdjust.value
     }, null, 2);
 
     const exportData = () => {
@@ -1058,6 +1363,14 @@ createApp({
         for (const k in DEFAULTS) {
           if (parsed.settings[k] !== undefined) settings[k] = parsed.settings[k];
         }
+      }
+      // 奖惩终稿（v3 开始导出）：同月份覆盖，旧版备份没此字段时保持现有
+      if (parsed.monthAdjust && typeof parsed.monthAdjust === 'object') {
+        for (const k in parsed.monthAdjust) {
+          if (!/^\d{4}-\d{2}$/.test(k)) continue;
+          monthAdjust.value[k] = parsed.monthAdjust[k];
+        }
+        persistAdjust();
       }
       persist();
       return n;
@@ -1104,6 +1417,8 @@ createApp({
     onMounted(() => {
       const savedRecords = localStorage.getItem('work_records');
       if (savedRecords) { try { records.value = JSON.parse(savedRecords) || {}; } catch (e) {} }
+      const savedAdjust = localStorage.getItem('work_month_adjust');
+      if (savedAdjust) { try { monthAdjust.value = JSON.parse(savedAdjust) || {}; } catch (e) {} }
       const savedSettings = localStorage.getItem('work_settings');
       if (savedSettings) {
         try {
@@ -1126,6 +1441,9 @@ createApp({
       payoutThisA, payoutThisB, payoutNextB, penaltyDetails,
       fmt, money, signed, moneyParts, boardMain, buildReport, applyImport,
       isToday, isCurrentMonth, getRecord, hasPenalty, cellClass, isCutEdge,
+      payDayKind, selectedPayInfo,
+      monthAdjust, adjustOpen, adjustTarget, adjustDraft, adjustStats, adjustDelta,
+      openAdjust, closeAdjust, saveAdjustDraft, finalizeAdjust, unfinalizeAdjust,
       changeMonth, goToday, openDayDrawer, selectShift,
       openSettings, closeSettings,
       saveRecord, deleteRecord, copyReport,
