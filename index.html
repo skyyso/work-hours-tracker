@@ -4,8 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>工时薪酬助手</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234F46E5'/%3E%3Cpath d='M16 8v8l5 3' stroke='white' stroke-width='2.5' stroke-linecap='round' fill='none'/%3E%3C/svg%3E" />
+  <!-- 本地依赖，不走 CDN：
+       原来用 cdn.tailwindcss.com 是运行时 JIT 编译器，它必须先把页面扫一遍再注入样式，
+       中间必然有一段无样式窗口；且两个 CDN 在国内不稳，挂了页面就只剩裸模板。
+       现改为预生成的静态 CSS + 本地 Vue，离线可用、无网络抗手。 -->
+  <link rel="stylesheet" href="vendor/tailwind.css" />
+  <script src="vendor/vue.global.prod.js"></script>
+  <style>
+    /* Vue 接管前先藏住模板，避开刷新瞬间闪出 {{ }} 原文。
+       mount() 一执行 v-cloak 属性就被移除，这条规则自动失效。 */
+    [v-cloak] { visibility: hidden; }
+  </style>
   <style>
     /* ===== 设计令牌（与 Tailwind 默认色板一一对应，便于两种写法混用） ===== */
     :root {
@@ -212,6 +222,9 @@
 <symbol id="i-coins" viewBox="0 0 24 24"><circle cx="8" cy="8" r="6" /><path d="M18.09 10.37A6 6 0 1 1 10.34 18" /><path d="M7 6h1v4" /><path d="m16.71 13.88.7.71-2.82 2.82" /></symbol>
 <symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></symbol>
 <symbol id="i-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M3 5V19A9 3 0 0 0 21 19V5" /><path d="M3 12A9 3 0 0 0 21 12" /></symbol>
+<symbol id="i-cloud" viewBox="0 0 24 24"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" /></symbol>
+<symbol id="i-refresh-cw" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /><path d="M8 16H3v5" /></symbol>
+<symbol id="i-log-out" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="m16 17 5-5-5-5" /><path d="M21 12H9" /></symbol>
 <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 15V3" /><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m7 10 5 5 5-5" /></symbol>
 <symbol id="i-hourglass" viewBox="0 0 24 24"><path d="M5 22h14" /><path d="M5 2h14" /><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22" /><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2" /></symbol>
 <symbol id="i-lightbulb" viewBox="0 0 24 24"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" /><path d="M9 18h6" /><path d="M10 22h4" /></symbol>
@@ -231,7 +244,7 @@
 <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></symbol>
 </svg>
 
-<div id="app" class="max-w-md mx-auto min-h-screen bg-slate-50 flex flex-col shadow-xl relative">
+<div id="app" v-cloak class="max-w-md mx-auto min-h-screen bg-slate-50 flex flex-col shadow-xl relative">
 
   <!-- ===== 顶部资产看板 ===== -->
   <header class="text-white px-5 pt-5 pb-5 rounded-b-3xl board-shadow shrink-0 relative overflow-hidden"
@@ -734,6 +747,58 @@
         <p class="px-5 py-3 text-[10px] text-slate-400 bg-slate-50/70">夜班跨天，工时全部归入开始打卡的那一天。</p>
       </div>
 
+      <!-- 云端同步：未登录时也完全可用，登录只是多一层服务器备份 -->
+      <div class="card overflow-hidden">
+        <div class="px-5 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between gap-2">
+          <p class="text-xs font-bold text-slate-700 flex items-center gap-1.5"><svg class="ico text-[15px] text-indigo-600"><use href="#i-cloud" /></svg>云端同步</p>
+          <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full" :class="syncStatusClass">{{ syncStatusText }}</span>
+        </div>
+
+        <!-- 已登录 -->
+        <div v-if="sync.user" class="divide-y divide-slate-100">
+          <div class="flex items-center justify-between px-5 py-3">
+            <span class="text-xs text-slate-600">当前账号</span>
+            <span class="text-xs font-bold text-slate-800">{{ sync.user.username }}</span>
+          </div>
+          <div v-if="syncTimeText" class="flex items-center justify-between px-5 py-3">
+            <span class="text-xs text-slate-600">最后同步</span>
+            <span class="text-xs font-bold text-slate-800 font-mono-num">{{ syncTimeText }}</span>
+          </div>
+          <div v-if="sync.lastError" class="px-5 py-2.5 bg-rose-50">
+            <p class="text-[10px] text-rose-700 leading-relaxed">{{ sync.lastError }}</p>
+          </div>
+          <button @click="doSyncNow" :disabled="sync.busy" class="w-full flex items-center gap-2 px-5 py-3.5 text-xs font-medium text-indigo-600 active:bg-slate-50 transition disabled:opacity-40"><svg class="ico text-[15px]"><use href="#i-refresh-cw" /></svg>立即同步{{ sync.pending > 0 ? '（待上传 ' + sync.pending + ' 项）' : '' }}</button>
+          <button @click="doPushAll" :disabled="sync.busy" class="w-full flex items-center gap-2 px-5 py-3.5 text-xs font-medium text-slate-500 active:bg-slate-50 transition disabled:opacity-40"><svg class="ico text-[15px]"><use href="#i-upload" /></svg>把本机全部数据上传</button>
+          <button @click="doPullAll" :disabled="sync.busy" class="w-full flex items-center gap-2 px-5 py-3.5 text-xs font-medium text-slate-500 active:bg-slate-50 transition disabled:opacity-40"><svg class="ico text-[15px]"><use href="#i-download" /></svg>用服务器数据覆盖本机</button>
+          <button @click="doLogout" :disabled="sync.busy" class="w-full flex items-center gap-2 px-5 py-3.5 text-xs font-medium text-rose-600 active:bg-rose-50 transition disabled:opacity-40"><svg class="ico text-[15px]"><use href="#i-log-out" /></svg>退出登录（保留本地数据）</button>
+        </div>
+
+        <!-- 未登录 -->
+        <div v-else class="divide-y divide-slate-100">
+          <div class="px-5 py-3 space-y-2">
+            <input v-model="loginForm.username" type="text" autocomplete="username" placeholder="用户名（3–32 位字母数字）"
+              class="w-full text-xs text-slate-700 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-indigo-500" />
+            <input v-model="loginForm.password" type="password" autocomplete="current-password" placeholder="密码（至少 8 位）" @keyup.enter="doLogin"
+              class="w-full text-xs text-slate-700 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-indigo-500" />
+            <div class="flex gap-2 pt-0.5">
+              <button @click="doLogin" :disabled="sync.busy" class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-indigo-600 text-white active:scale-95 transition disabled:opacity-40">登录</button>
+              <button v-if="sync.serverUsers === 0" @click="doRegister" :disabled="sync.busy" class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 text-white active:scale-95 transition disabled:opacity-40">创建首个账号</button>
+            </div>
+          </div>
+          <p class="px-5 py-2.5 text-[10px] leading-relaxed bg-slate-50/70"
+            :class="sync.serverUsers === null ? 'text-amber-700' : 'text-slate-400'">
+            <template v-if="sync.serverUsers === null">没探到同步服务（当前只跑静态页）。数据仍存本机，一切功能正常；要多设备共用需先启动 server/。</template>
+            <template v-else-if="sync.serverUsers === 0">服务端还没有账号。创建首个账号后就会自动关闭注册，不会被陌生人开号。</template>
+            <template v-else>登录后打卡数据会自动同步到服务器，多设备共用同一份。未登录也能正常记账，只存本机。</template>
+          </p>
+          <label class="flex items-center justify-between gap-2 px-5 py-3">
+            <span class="text-xs text-slate-600 shrink-0">服务器地址</span>
+            <input v-model="sync.apiBase" @change="saveApiBase" type="url" inputmode="url" placeholder="留空 = 同源"
+              class="min-w-0 flex-1 text-right text-[11px] text-slate-700 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-indigo-500" />
+          </label>
+        </div>
+      </div>
+
       <div class="card overflow-hidden">
         <p class="px-5 py-3 text-xs font-bold text-slate-700 bg-slate-50 border-b border-slate-100 flex items-center gap-1.5"><svg class="ico text-[15px] text-indigo-600"><use href="#i-database" /></svg>数据</p>
         <div class="divide-y divide-slate-100">
@@ -754,7 +819,8 @@
       </div>
 
       <p class="text-center text-[10px] text-slate-400 leading-relaxed pt-1 pb-2">
-        数据仅保存在本机浏览器（localStorage）。<br />清除浏览器数据会丢失，建议定期导出备份。
+        <template v-if="sync.user">数据存本机浏览器，并同步到服务器账号 <b class="text-slate-500">{{ sync.user.username }}</b>。<br />换设备登录同一账号即可看到同一份数据。</template>
+        <template v-else>数据仅保存在本机浏览器（localStorage）。<br />清除浏览器数据会丢失，建议登录同步或定期导出备份。</template>
       </p>
 
         </div>
@@ -970,7 +1036,23 @@
 
 </div>
 
+  <div id="boot-fail" hidden class="max-w-md mx-auto min-h-screen bg-slate-50 flex items-center justify-center p-8">
+    <div class="card p-6 text-center">
+      <p class="text-sm font-bold text-slate-800">页面没能加载完成</p>
+      <p class="text-xs text-slate-500 mt-2 leading-relaxed">缺少 <code class="font-mono-num">vendor/vue.global.prod.js</code>。<br />你的打卡数据还在本机，没有丢。<br />刷新重试，或检查部署时 vendor/ 目录是否一起拷了。</p>
+    </div>
+  </div>
+
+  <!-- 离线优先的同步引擎：不依赖 Vue，独立于页面逻辑，方便以后套 APP 壳复用 -->
+  <script src="sync.js"></script>
 <script>
+// Vue 没加载成功时，v-cloak 会把整个 #app 遮成白屏。
+// 白屏比闪一屏 {{ }} 强，但用户仍然不知道发生了什么，所以给一个明确提示。
+if (typeof Vue === 'undefined') {
+  document.getElementById('app').remove();
+  document.getElementById('boot-fail').hidden = false;
+  throw new Error('Vue 未加载，vendor/vue.global.prod.js 缺失或被拦');
+}
 const { createApp, ref, reactive, computed, watch, onMounted } = Vue;
 
 createApp({
@@ -992,6 +1074,14 @@ createApp({
 
     const settings = reactive({ ...DEFAULTS });
     const records = ref({});
+
+    // 设置字段的中文名：登录合并冲突对照时要给人看，不能直接抱 key
+    const SETTING_LABELS = {
+      rate: '基础时薪', fullDays: '满勤门槛（天）', fullBonusPerHour: '满勤奖单价',
+      foundBonus: '查获奖励/件', missedPenalty: '漏查处罚/件', cutoff: '上半月截止日',
+      payDayA: '发薪日 A', payDayB: '发薪日 B', dayHours: '白班默认工时',
+      nightHours: '夜班默认工时', defaultShift: '默认班次'
+    };
 
     // 月度奖惩终稿：key = 'YYYY-MM'
     // { status:'draft'|'final', finalAmount:Number|null, note:String, finalizedAt:ISOString }
@@ -1352,7 +1442,13 @@ createApp({
       return v - adjustStats.value.rawReview;
     });
 
-    const persistAdjust = () => localStorage.setItem('work_month_adjust', JSON.stringify(monthAdjust.value));
+    const persistAdjust = (dirtyMonths) => {
+      localStorage.setItem('work_month_adjust', JSON.stringify(monthAdjust.value));
+      if (!suppressSync && window.WHTSync && dirtyMonths) {
+        const arr = Array.isArray(dirtyMonths) ? dirtyMonths : [dirtyMonths];
+        window.WHTSync.markManyDirty({ adjust: arr });
+      }
+    };
 
     const openAdjust = (year, month) => {
       adjustTarget.value = { year, month };
@@ -1371,13 +1467,14 @@ createApp({
       const t = adjustTarget.value;
       const v = Number(adjustDraft.value.finalAmount);
       if (!Number.isFinite(v)) { showToast('请先填写终稿金额'); return false; }
-      monthAdjust.value[monthKeyOf(t.year, t.month)] = {
+      const mk = monthKeyOf(t.year, t.month);
+      monthAdjust.value[mk] = {
         status,
         finalAmount: v,
         note: String(adjustDraft.value.note || '').slice(0, 60),
         finalizedAt: status === 'final' ? new Date().toISOString() : ''
       };
-      persistAdjust();
+      persistAdjust(mk);
       return true;
     };
 
@@ -1396,10 +1493,11 @@ createApp({
 
     const unfinalizeAdjust = () => {
       const t = adjustTarget.value;
-      delete monthAdjust.value[monthKeyOf(t.year, t.month)];
-      persistAdjust();
+      const mk = monthKeyOf(t.year, t.month);
+      delete monthAdjust.value[mk];
+      persistAdjust(mk);
       adjustOpen.value = false;
-      showToast('已撑销定稿，恢复日常累计值');
+      showToast('已撤销定稿，恢复日常累计值');
     };
 
     const selectShift = (type) => {
@@ -1407,7 +1505,16 @@ createApp({
       draftRecord.value.hours = type === 'night' ? cfg.value.nightHours : cfg.value.dayHours;
     };
 
-    const persist = () => localStorage.setItem('work_records', JSON.stringify(records.value));
+    // suppressSync：远端数据写回本地时用，避免「拉下来 → 又当成本地改动推回去」的回环
+    let suppressSync = false;
+
+    const persist = (dirtyDays) => {
+      localStorage.setItem('work_records', JSON.stringify(records.value));
+      if (!suppressSync && window.WHTSync && dirtyDays) {
+        const arr = Array.isArray(dirtyDays) ? dirtyDays : [dirtyDays];
+        window.WHTSync.markManyDirty({ records: arr });
+      }
+    };
 
     const saveRecord = () => {
       const op = Number(draftRecord.value.other_penalty);
@@ -1418,16 +1525,18 @@ createApp({
         draftRecord.value.other_penalty = null;
         draftRecord.value.penalty_reason = '';
       }
-      records.value[keyOf(currentYear.value, currentMonth.value, selectedDay.value)] = JSON.parse(JSON.stringify(draftRecord.value));
-      persist();
+      const dayKey = keyOf(currentYear.value, currentMonth.value, selectedDay.value);
+      records.value[dayKey] = JSON.parse(JSON.stringify(draftRecord.value));
+      persist(dayKey);
       isDrawerOpen.value = false;
       if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(30);
       showToast('已保存 ' + (currentMonth.value + 1) + '月' + selectedDay.value + '日');
     };
 
     const deleteRecord = () => {
-      delete records.value[keyOf(currentYear.value, currentMonth.value, selectedDay.value)];
-      persist();
+      const dayKey = keyOf(currentYear.value, currentMonth.value, selectedDay.value);
+      delete records.value[dayKey];
+      persist(dayKey);
       isDrawerOpen.value = false;
       showToast('已清除该日记录');
     };
@@ -1519,9 +1628,11 @@ createApp({
       const incoming = parsed && (parsed.records || parsed);
       if (!incoming || typeof incoming !== 'object') throw new Error('格式不正确');
       let n = 0;
+      const dirtyDays = [], dirtyMonths = [];
       for (const k in incoming) {
         if (!/^\d{4}-\d{2}-\d{2}$/.test(k)) continue;
         records.value[k] = incoming[k];
+        dirtyDays.push(k);
         n++;
       }
       if (parsed.settings) {
@@ -1534,10 +1645,12 @@ createApp({
         for (const k in parsed.monthAdjust) {
           if (!/^\d{4}-\d{2}$/.test(k)) continue;
           monthAdjust.value[k] = parsed.monthAdjust[k];
+          dirtyMonths.push(k);
         }
-        persistAdjust();
+        persistAdjust(dirtyMonths);
       }
-      persist();
+      persist(dirtyDays);
+      if (!suppressSync && window.WHTSync && parsed.settings) window.WHTSync.markDirty('settings');
       return n;
     };
 
@@ -1564,18 +1677,250 @@ createApp({
       const label = `${currentYear.value}年${currentMonth.value + 1}月`;
       if (!confirm(`确定清空 ${label} 的全部打卡记录？此操作不可撤销。`)) return;
       const prefix = monthPrefix(currentYear.value, currentMonth.value);
-      let n = 0;
-      for (const k in records.value) if (k.indexOf(prefix) === 0) { delete records.value[k]; n++; }
-      persist();
-      showToast(`已清空 ${label} ${n} 条记录`);
+      const removed = [];
+      for (const k in records.value) if (k.indexOf(prefix) === 0) { delete records.value[k]; removed.push(k); }
+      persist(removed);
+      showToast(`已清空 ${label} ${removed.length} 条记录`);
     };
 
     const clearAll = () => {
       if (!confirm('确定清空全部打卡记录？建议先导出备份。此操作不可撤销。')) return;
       if (!confirm('再次确认：所有月份的记录都会被删除。')) return;
+      const removed = Object.keys(records.value);
       records.value = {};
-      persist();
+      persist(removed);
       showToast('已清空全部记录');
+    };
+
+    // ===== 云端同步（离线优先：本地 localStorage 仍是唯一真相，同步只是额外把数据推到服务器）=====
+    const sync = reactive({
+      status: 'idle', user: null, pending: 0, lastSyncAt: null, lastError: '',
+      serverUsers: null, apiBase: '', busy: false
+    });
+    const syncPanelOpen = ref(false);
+    const loginForm = ref({ username: '', password: '' });
+
+    // 首次登录合并：本机与服务器同一天内容不同时，让用户选哪份赢
+    const mergeOpen = ref(false);
+    const mergeInfo = ref(null);
+
+    /** 把一条记录压成一行人能读的短描述，用于冲突对照 */
+    const describeRecord = (r) => {
+      if (!r) return '（无）';
+      if (r.status === 'rest') return '休息';
+      if (r.status === 'leave') return '请假';
+      const bits = [(r.shift_type === 'night' ? '夜班' : '白班') + ' ' + fmt(r.hours) + 'h'];
+      if (r.contraband_found > 0) bits.push('查获' + r.contraband_found);
+      if (r.contraband_missed > 0) bits.push('漏查' + r.contraband_missed);
+      if (Number(r.other_penalty) > 0) bits.push('扣' + money(r.other_penalty));
+      return bits.join(' · ');
+    };
+
+    const describeAdjust = (a) => {
+      if (!a) return '（无）';
+      const st = a.status === 'final' ? '已定稿' : '草稿';
+      const amt = (a.finalAmount === null || a.finalAmount === undefined || a.finalAmount === '')
+        ? '未填金额' : signed(a.finalAmount);
+      return st + ' ' + amt;
+    };
+
+    const mergeRows = computed(() => {
+      const d = mergeInfo.value && mergeInfo.value.diff;
+      if (!d) return [];
+      const rows = [];
+      for (const c of d.conflictDetail || []) {
+        rows.push({ key: c.key, label: c.key.slice(5).replace('-', '月') + '日',
+                    local: describeRecord(c.local), remote: describeRecord(c.remote) });
+      }
+      for (const c of d.adjustConflictDetail || []) {
+        rows.push({ key: c.key, label: c.key.slice(5) + '月奖惩',
+                    local: describeAdjust(c.local), remote: describeAdjust(c.remote) });
+      }
+      for (const s of d.settingsDiff || []) {
+        rows.push({ key: 'set:' + s.key, label: SETTING_LABELS[s.key] || ('设置 ' + s.key),
+                    local: String(s.local), remote: String(s.remote) });
+      }
+      return rows;
+    });
+
+    const syncStatusText = computed(() => ({
+      idle: '未登录·仅存本机',
+      ready: sync.pending > 0 ? `待上传 ${sync.pending} 项` : '已同步',
+      syncing: '同步中…',
+      offline: '连不上服务器·本地照常用',
+      error: '同步出错'
+    })[sync.status] || sync.status);
+
+    const syncStatusClass = computed(() => ({
+      idle: 'text-slate-500 bg-slate-100',
+      ready: sync.pending > 0 ? 'text-amber-700 bg-amber-100' : 'text-emerald-700 bg-emerald-100',
+      syncing: 'text-indigo-700 bg-indigo-100',
+      offline: 'text-amber-700 bg-amber-100',
+      error: 'text-rose-700 bg-rose-100'
+    })[sync.status] || 'text-slate-500 bg-slate-100');
+
+    const syncTimeText = computed(() => {
+      if (!sync.lastSyncAt) return '';
+      const d = new Date(sync.lastSyncAt);
+      return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    });
+
+    /** 把远端变更写进本地。suppressSync 全程打开，否则会把刚拉下来的数据当成本地改动推回去。 */
+    function applyRemoteData({ records: rs, adjust: as, settings: st, replace }) {
+      suppressSync = true;
+      try {
+        if (replace) { records.value = {}; monthAdjust.value = {}; }
+        for (const [day, val] of Object.entries(rs || {})) {
+          if (val === null) delete records.value[day];
+          else records.value[day] = val;
+        }
+        for (const [m, val] of Object.entries(as || {})) {
+          if (val === null) delete monthAdjust.value[m];
+          else monthAdjust.value[m] = val;
+        }
+        if (st) for (const k in DEFAULTS) if (st[k] !== undefined) settings[k] = st[k];
+        persist();
+        persistAdjust();
+      } finally {
+        // 设置的 watch 是异步触发的，得等它跑完再恢复，否则仍会被标脏
+        setTimeout(() => { suppressSync = false; }, 0);
+      }
+    }
+
+    const withBusy = async (fn) => {
+      sync.busy = true;
+      try { return await fn(); }
+      catch (e) { showToast(e.message || '操作失败'); return null; }
+      finally { sync.busy = false; }
+    };
+
+    const doLogin = () => withBusy(async () => {
+      const { username, password } = loginForm.value;
+      if (!username || !password) { showToast('请填写用户名与密码'); return; }
+      await window.WHTSync.login(username.trim(), password);
+      loginForm.value.password = '';
+
+      // 只读探一份服务端快照：不写本地、不动 dirty、不改 rev。
+      // 这里不能直接 pullAll —— 它的语义是「用服务器覆盖本机」，
+      // 本机还没推上去的天数会无声消失（实测过，会丢）。
+      const dump = await window.WHTSync.peekRemote();
+      const diff = window.WHTSync.diffLocal(dump);
+      const remoteDays = Object.keys(dump.records || {}).length;
+      const localDays = Object.keys(records.value).length;
+      const localAdj = Object.keys(monthAdjust.value).length;
+
+      // 本机干净 → 没有可丢的东西，直接拉全量
+      if (localDays === 0 && localAdj === 0) {
+        await window.WHTSync.pullAll();
+        showToast(remoteDays > 0 ? `已登录，拉取 ${remoteDays} 天记录` : '已登录，服务器暂无数据');
+        return;
+      }
+
+      // 同一天两边内容不同 → 必须让用户决定，不替他选
+      if (diff.conflict.length || diff.adjustConflict.length || diff.settingsDiff.length) {
+        mergeInfo.value = { diff, remoteDays, localDays };
+        mergeOpen.value = true;
+        return;
+      }
+
+      // 无冲突 → 双向合并（本地全标脏后 push，再 pull 远端独有），两边取并集
+      await runMerge(diff, 'local');
+    });
+
+    /**
+     * 执行合并。
+     * 机制：把本机数据标脏 → syncNow 先 push 后 pull（拉取起点是 push 之前的 rev）。
+     *   winner='local'  冲突键也推上去 → 服务端被本机值覆盖
+     *   winner='remote' 冲突键不标脏 → 拉取时远端值落地本机
+     * 非冲突数据两边都不会丢：本机独有的被推上去，服务器独有的被拉下来。
+     */
+    async function runMerge(diff, winner) {
+      // 合并前留一份本机快照。远端值落地是不可逆的，出意外至少数据还在。
+      window.WHTSync.snapshotLocal('login-merge-' + winner);
+
+      const excludeRecords = winner === 'remote' ? diff.conflict : [];
+      const excludeAdjust = winner === 'remote' ? diff.adjustConflict : [];
+      // 远端已有设置且用户选了服务器版本时，别把本机默认值推上去盖掉远端
+      const pushSettings = !diff.remoteHasSettings || winner === 'local';
+
+      const marked = window.WHTSync.markAllLocalDirty({ settings: pushSettings, excludeRecords, excludeAdjust });
+      const r = await window.WHTSync.syncNow();
+      if (!r.ok) {
+        showToast('合并失败：' + (r.error || r.reason) + '（本机数据未动）');
+        return r;
+      }
+      const total = Object.keys(records.value).length;
+      const parts = [`已合并，共 ${total} 天`];
+      if (marked.records) parts.push(`上传 ${marked.records}`);
+      if (r.applied) parts.push(`拉取 ${r.applied}`);
+      showToast(parts.join(' · '));
+      return r;
+    }
+
+    const resolveMerge = (winner) => withBusy(async () => {
+      const info = mergeInfo.value;
+      if (!info) return;
+      mergeOpen.value = false;
+      await runMerge(info.diff, winner);
+      mergeInfo.value = null;
+    });
+
+    // 先不合并：保持登录但不动任何数据。同步面板会留一个入口重新进来。
+    const deferMerge = () => {
+      mergeOpen.value = false;
+      showToast('已跳过合并，本机数据未改动');
+    };
+
+    const reopenMerge = () => withBusy(async () => {
+      const dump = await window.WHTSync.peekRemote();
+      const diff = window.WHTSync.diffLocal(dump);
+      if (!diff.conflict.length && !diff.adjustConflict.length && !diff.settingsDiff.length) {
+        await runMerge(diff, 'local');
+        return;
+      }
+      mergeInfo.value = {
+        diff,
+        remoteDays: Object.keys(dump.records || {}).length,
+        localDays: Object.keys(records.value).length
+      };
+      mergeOpen.value = true;
+    });
+
+    const doRegister = () => withBusy(async () => {
+      const { username, password } = loginForm.value;
+      if (!username || !password) { showToast('请填写用户名与密码'); return; }
+      if (password.length < 8) { showToast('密码至少 8 位'); return; }
+      await window.WHTSync.register(username.trim(), password);
+      showToast('账号已创建，正在登录…');
+      await doLogin();
+    });
+
+    const doLogout = () => withBusy(async () => {
+      if (sync.pending > 0 && !confirm(`还有 ${sync.pending} 项未上传，确定退出？本地数据不会删除。`)) return;
+      await window.WHTSync.logout({ keepLocal: true });
+      showToast('已退出登录，本地数据保留');
+    });
+
+    const doSyncNow = () => withBusy(async () => {
+      const r = await window.WHTSync.syncNow();
+      showToast(r.ok ? (r.applied > 0 ? `已同步，拉取 ${r.applied} 项变更` : '已是最新') : ('同步失败：' + (r.error || r.reason)));
+    });
+
+    const doPullAll = () => withBusy(async () => {
+      if (!confirm('用服务器数据覆盖本机？本机未上传的改动会丢失。')) return;
+      const d = await window.WHTSync.pullAll();
+      showToast(`已从服务器拉取 ${Object.keys(d.records || {}).length} 天记录`);
+    });
+
+    const doPushAll = () => withBusy(async () => {
+      const r = await window.WHTSync.pushAll();
+      showToast(`已上传本地全部数据（版本 ${r.rev}）`);
+    });
+
+    const saveApiBase = () => {
+      window.WHTSync.setApiBase(sync.apiBase);
+      showToast(sync.apiBase ? '已保存服务器地址' : '已恢复为同源');
+      window.WHTSync.health().catch(() => {});
     };
 
     // ===== 载入与持久化 =====
@@ -1591,9 +1936,27 @@ createApp({
           for (const k in DEFAULTS) if (s[k] !== undefined) settings[k] = s[k];
         } catch (e) {}
       }
+
+      if (window.WHTSync) {
+        window.WHTSync.setApplyHook(applyRemoteData);
+        window.WHTSync.onChange(s => {
+          sync.status = s.status;
+          sync.user = s.user;
+          sync.pending = s.pending;
+          sync.lastSyncAt = s.lastSyncAt;
+          sync.lastError = s.lastError;
+          sync.serverUsers = s.serverUsers;
+        });
+        sync.apiBase = window.WHTSync.getApiBase() === location.origin ? '' : window.WHTSync.getApiBase();
+        // 探一下服务端在不在、有没有账号，决定设置页该显示「创建账号」还是「登录」
+        window.WHTSync.health().catch(() => {});
+      }
     });
 
-    watch(settings, () => localStorage.setItem('work_settings', JSON.stringify({ ...settings })), { deep: true });
+    watch(settings, () => {
+      localStorage.setItem('work_settings', JSON.stringify({ ...settings }));
+      if (!suppressSync && window.WHTSync) window.WHTSync.markDirty('settings');
+    }, { deep: true });
 
     return {
       settings, cfg, records, recordCount,
@@ -1613,6 +1976,9 @@ createApp({
       openAdjust, closeAdjust, saveAdjustDraft, finalizeAdjust, unfinalizeAdjust,
       changeMonth, goToday, openDayDrawer, selectShift,
       openSettings, closeSettings,
+      sync, syncPanelOpen, loginForm, syncStatusText, syncStatusClass, syncTimeText,
+      mergeOpen, mergeInfo, mergeRows, resolveMerge, deferMerge, reopenMerge,
+      doLogin, doRegister, doLogout, doSyncNow, doPullAll, doPushAll, saveApiBase,
       saveRecord, deleteRecord, copyReport,
       exportData, copyData, importData, resetSettings, clearMonth, clearAll
     };
