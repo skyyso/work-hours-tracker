@@ -254,7 +254,7 @@
          用归属制打一天卡数字当场就涨；用现金流则毫无反馈（影响的是下一个发薪日）。 -->
     <div v-if="tab === 'calendar'" class="mt-4">
       <p class="text-[11px] text-indigo-100/70 font-medium flex items-center gap-1.5">
-        <svg class="ico text-[13px]"><use href="#i-coins" /></svg>{{ currentMonth + 1 }}月挣得<span class="text-indigo-100/40 font-normal">· 干活口径</span>
+        <svg class="ico text-[13px]"><use href="#i-coins" /></svg>{{ currentMonth + 1 }}月挣得
       </p>
       <p class="mt-1 flex items-end font-mono-num leading-none">
         <span class="text-base font-bold text-indigo-100/80 mb-[3px] mr-0.5">¥</span>
@@ -359,7 +359,7 @@
       <div class="card overflow-hidden">
         <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
           <span class="text-[13px] font-bold text-slate-800 flex items-center gap-1.5"><svg class="ico text-[15px] text-indigo-600"><use href="#i-coins" /></svg>{{ currentMonth + 1 }}月挣得</span>
-          <span class="text-[10px] font-normal text-slate-400">干活口径 · {{ currentMonth + 1 }}/1–{{ currentMonth + 1 }}/{{ daysInMonth }}</span>
+          <span class="text-[10px] font-normal text-slate-400">{{ currentMonth + 1 }}/1–{{ currentMonth + 1 }}/{{ daysInMonth }}</span>
         </div>
         <div class="px-5 py-3.5 space-y-1.5 text-xs">
           <div class="flex justify-between items-center">
@@ -370,11 +370,15 @@
             </span>
           </div>
           <div class="flex justify-between items-center">
-            <span class="text-slate-500">奖惩净额</span>
+            <span class="text-slate-500">奖惩净额<span class="text-slate-400">（不含满勤奖）</span></span>
             <span class="flex items-center gap-1.5">
               <span class="stat-tag" :class="monthStats.finalized ? 'stat-final' : 'stat-draft'">{{ monthStats.finalized ? '已定稿' : '预估·待审核' }}</span>
-              <span class="amt" :class="monthStats.adjustNet > 0 ? 'amt-pos' : (monthStats.adjustNet < 0 ? 'amt-neg' : 'amt-zero')">{{ signed(monthStats.adjustNet) }}</span>
+              <span class="amt" :class="monthStats.reviewNet > 0 ? 'amt-pos' : (monthStats.reviewNet < 0 ? 'amt-neg' : 'amt-zero')">{{ signed(monthStats.reviewNet) }}</span>
             </span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-slate-500">满勤奖<span class="text-slate-400">（另计，月底定）</span></span>
+            <span class="amt" :class="monthStats.fullBonus > 0 ? 'amt-pos' : 'amt-zero'">{{ monthStats.fullBonus > 0 ? '+' + money(monthStats.fullBonus) : '¥0' }}</span>
           </div>
           <div class="flex justify-between items-center pt-2 border-t border-slate-100">
             <span class="font-semibold text-slate-600">合计应得</span>
@@ -1121,12 +1125,15 @@ createApp({
       const finalized = !!(adj && adj.status === 'final' && Number.isFinite(Number(adj.finalAmount)));
       const reviewAmount = finalized ? Number(adj.finalAmount) : rawReview;
       const reviewDelta = finalized ? reviewAmount - rawReview : 0;
+      // 奖惩净额（不含满勤奖）：用于「挣得」口径——满勤奖月底才确定，不混进已确认的劳动所得。
+      const reviewNet = reviewAmount;
+      // 发放净额（含满勤奖）：进账/结转实际会发这笔，满勤奖次月 payDayB 确实到账。
       const adjustNet = fullBonus + reviewAmount;
 
       return {
         h1, h2, totalHours, workDays, dayShifts, nightShifts, restDays, leaveDays,
         foundCount, missedCount, otherPenalties,
-        fullBonus, foundBonus, missedPenalty, adjustNet,
+        fullBonus, foundBonus, missedPenalty, adjustNet, reviewNet,
         rawReview, reviewAmount, reviewDelta, finalized,
         adjustStatus: adj ? adj.status : null,
         adjustNote: adj && adj.note ? adj.note : '',
@@ -1149,9 +1156,10 @@ createApp({
 
     // ===== 两套记账口径（这是页面之前最主要的歧义源） =====
     // 归属制「挣得」：本月 1–月底干出来的钱，不管什么时候发。打一天卡当天就涨。
+    //   只含工时 + 已确认奖惩（满勤奖月底才确定，不混入挣得，单独展示）。
     // 收付制「进账」：本月卡里实际进的钱，含上月结转部分。
     // 两者永远不相等，必须各自具名、分区展示，不能都叫「本月」。
-    const earnedTotal = computed(() => monthStats.value.basePay + monthStats.value.adjustNet);
+    const earnedTotal = computed(() => monthStats.value.basePay + monthStats.value.reviewNet);
     const cashTotal = computed(() => payoutThisB.value + payoutThisA.value);
     // 「挣得」拆成两笔落地时间：上半月工时随本月 payDayA；下半月工时 + 奖惩结转次月 payDayB。
     // 这一行是两套口径之间唯一的桥，解释了为何挣得 ≠ 进账。
@@ -1399,7 +1407,7 @@ createApp({
         `出勤 ${s.workDays}/${c.fullDays} 天（白${s.dayShifts}/夜${s.nightShifts}） | 总工时 ${fmt(s.totalHours)}h`,
         `上半月 ${fmt(s.h1)}h → ${money(s.h1 * c.rate)}　下半月 ${fmt(s.h2)}h → ${money(s.h2 * c.rate)}`,
         ``,
-        `【${m}月挣得·干活口径】${money(earnedTotal.value)}`,
+        `【${m}月挣得】${money(earnedTotal.value)}`,
         `工时收入 ${money(s.basePay)}（确定） | 奖惩净额 ${signed(s.adjustNet)}（${s.finalized ? '已定稿' : '预估·待审核'}）`,
         `何时到手：${m}/${settings.payDayA} ${money(earnedSplit.value.paid)}（上半月工时） | ${nm}/${settings.payDayB} ${money(earnedSplit.value.carry)}（结转：下半月工时+奖惩）`,
         ``,
