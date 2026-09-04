@@ -1099,9 +1099,14 @@
 </div>
 
   <div id="boot-fail" hidden class="max-w-md mx-auto min-h-screen bg-slate-50 flex items-center justify-center p-8">
-    <div class="card p-6 text-center">
+    <div class="card p-6 text-center w-full">
       <p class="text-sm font-bold text-slate-800">页面没能加载完成</p>
-      <p class="text-xs text-slate-500 mt-2 leading-relaxed">缺少 <code class="font-mono-num">vendor/vue.global.prod.js</code>。<br />你的打卡数据还在本机，没有丢。<br />刷新重试，或检查部署时 vendor/ 目录是否一起拷了。</p>
+      <p class="text-xs text-slate-500 mt-2 leading-relaxed">
+        渲染引擎 <code class="font-mono-num">vue.global.prod.js</code> 没能就位，界面画不出来。<br />
+        你的打卡数据存在这台设备本机，跟这次失败无关，一条都不会丢。
+      </p>
+      <button id="boot-retry" type="button" class="mt-4 w-full py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md active:scale-95 transition disabled:opacity-40">重试加载</button>
+      <p id="boot-detail" class="text-[11px] text-slate-400 mt-3 leading-relaxed break-all"></p>
     </div>
   </div>
 
@@ -1110,10 +1115,44 @@
 <script>
 // Vue 没加载成功时，v-cloak 会把整个 #app 遮成白屏。
 // 白屏比闪一屏 {{ }} 强，但用户仍然不知道发生了什么，所以给一个明确提示。
+//
+// 这里只能确定一件事：Vue 现在不可用。
+// 为什么不可用有多种可能——文件真的没部署、请求中途断开、被浏览器插件或中间设备
+// 拦截、内容被截断。所以文案不替用户断定原因，真正的原因交给「重试加载」去实测并如实报出。
 if (typeof Vue === 'undefined') {
   document.getElementById('app').remove();
   document.getElementById('boot-fail').hidden = false;
-  throw new Error('Vue 未加载，vendor/vue.global.prod.js 缺失或被拦');
+
+  const VUE_SRC = 'vendor/vue.global.prod.js';
+  const btn = document.getElementById('boot-retry');
+  const detail = document.getElementById('boot-detail');
+
+  btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    btn.textContent = '正在重新获取…';
+    detail.textContent = '';
+    try {
+      // cache:'reload' 强制回源，绕过可能已经缓存下来的坏副本，
+      // 成功后好的副本会写回缓存，紧接着的 reload 才拿得到完整文件。
+      const r = await fetch(VUE_SRC, { cache: 'reload' });
+      if (!r.ok) throw new Error('服务器返回 HTTP ' + r.status);
+      const text = await r.text();
+      // 不查字节数（会跟着 Vue 版本变），直接查页面真正要用的入口是否在，
+      // 内容被截断时这一项必然查不到。
+      if (!text.includes('createApp')) {
+        throw new Error('取回的内容不完整（' + text.length + ' 字节，缺 createApp）');
+      }
+      detail.textContent = '已取回 ' + text.length + ' 字节，正在重新载入…';
+      location.reload();
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = '再试一次';
+      detail.textContent = '重试失败：' + ((e && e.message) || e)
+        + '。若一直失败，换个网络（关掉代理/热点）或停用浏览器插件再试。';
+    }
+  });
+
+  throw new Error('Vue 不可用，已切到 boot-fail 提示');
 }
 const { createApp, ref, reactive, computed, watch, onMounted } = Vue;
 
