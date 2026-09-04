@@ -1100,8 +1100,8 @@
 
   <div id="boot-fail" hidden class="max-w-md mx-auto min-h-screen bg-slate-50 flex items-center justify-center p-8">
     <div class="card p-6 text-center w-full">
-      <p class="text-sm font-bold text-slate-800">页面没能加载完成</p>
-      <p class="text-xs text-slate-500 mt-2 leading-relaxed">
+      <p id="boot-title" class="text-sm font-bold text-slate-800">页面没能加载完成</p>
+      <p id="boot-desc" class="text-xs text-slate-500 mt-2 leading-relaxed">
         渲染引擎 <code class="font-mono-num">vue.global.prod.js</code> 没能就位，界面画不出来。<br />
         你的打卡数据存在这台设备本机，跟这次失败无关，一条都不会丢。
       </p>
@@ -1114,45 +1114,115 @@
   <script src="sync.js"></script>
 <script>
 // Vue 没加载成功时，v-cloak 会把整个 #app 遮成白屏。
-// 白屏比闪一屏 {{ }} 强，但用户仍然不知道发生了什么，所以给一个明确提示。
+// 白屏比闪一屏 {{ }} 强，但用户仍然不知道发生了什么，所以要给个明确提示。
 //
 // 这里只能确定一件事：Vue 现在不可用。
 // 为什么不可用有多种可能——文件真的没部署、请求中途断开、被浏览器插件或中间设备
-// 拦截、内容被截断。所以文案不替用户断定原因，真正的原因交给「重试加载」去实测并如实报出。
+// 拦截、内容被截断。所以文案不替用户断定原因，真正的原因交给重试去实测并如实报出。
+//
+// 关键改动（2026-09-04）：不再一上来就甩失败卡片。
+// 实测服务端访问日志：手机端每次取 Vue 都要 400~500ms，而失败的那些请求日志里
+// 压根没有记录 —— 即请求没到服务器，是链路丢包。这类失败绝大多数「重来一次就好」，
+// 而原来的做法是立刻把卡片糊在用户脸上，让人手动点一下按钮去做机器该做的事。
+// 那张卡除了逼用户点按钮，不提供任何它自己解决不了的信息。
+// 现在改成：先静默自动重试，只有连续失败才显示卡片。
 if (typeof Vue === 'undefined') {
-  document.getElementById('app').remove();
-  document.getElementById('boot-fail').hidden = false;
-
   const VUE_SRC = 'vendor/vue.global.prod.js';
+  const card = document.getElementById('boot-fail');
+  const title = document.getElementById('boot-title');
+  const desc = document.getElementById('boot-desc');
   const btn = document.getElementById('boot-retry');
   const detail = document.getElementById('boot-detail');
 
-  btn.addEventListener('click', async () => {
-    btn.disabled = true;
-    btn.textContent = '正在重新获取…';
-    detail.textContent = '';
+  document.getElementById('app').remove();
+
+  // 自动重试的次数上限必须跨 reload 记账。
+  // 原因：取回成功后只能靠 location.reload() 才能真正把 Vue 跑起来，而 reload 会让
+  // 这段代码重新执行。若不记次数，一旦遇到「能取回但仍起不来」的情况就成了无限刷新循环 ——
+  // 那比一张错误卡片糟糕得多，用户连「导出备份」都点不到，数据看得见摸不着。
+  //
+  // 用 sessionStorage 而不是 localStorage：关掉标签页就归零。
+  // 上周的失败不该让今天这次连一次自动重试都不给。
+  const KEY = 'wht_boot_retry';
+  const MAX_AUTO = 2;
+  const spent = Number(sessionStorage.getItem(KEY) || 0);
+  const autoLeft = Math.max(0, MAX_AUTO - spent);
+  let round = 0;
+
+  const FAIL_DESC = '渲染引擎 <code class="font-mono-num">vue.global.prod.js</code> 没能就位，界面画不出来。<br />'
+    + '你的打卡数据存在这台设备本机，跟这次失败无关，一条都不会丢。';
+
+  function showRetrying() {
+    title.textContent = '正在加载…';
+    desc.innerHTML = '渲染引擎还没到位，正在自动重新获取。<br />你的打卡数据存在本机，一条都不会丢。';
+    btn.hidden = true;
+  }
+
+  function showFailure(msg) {
+    title.textContent = '页面没能加载完成';
+    desc.innerHTML = FAIL_DESC;
+    btn.hidden = false;
+    btn.disabled = false;
+    btn.textContent = '再试一次';
+    detail.textContent = msg;
+  }
+
+  /** 取一次 Vue 并验完整性，成功返回字节数。 */
+  async function refetch() {
+    // cache:'reload' 强制回源，绕过可能已经缓存下来的坏副本，
+    // 成功后好的副本会写回缓存，紧接着的 reload 才拿得到完整文件。
+    const r = await fetch(VUE_SRC, { cache: 'reload' });
+    if (!r.ok) throw new Error('服务器返回 HTTP ' + r.status);
+    const text = await r.text();
+    // 不查字节数（会跟着 Vue 版本变），直接查页面真正要用的入口是否在，
+    // 内容被截断时这一项必然查不到。
+    if (!text.includes('createApp')) {
+      throw new Error('取回的内容不完整（' + text.length + ' 字节，缺 createApp）');
+    }
+    return text.length;
+  }
+
+  async function tryLoad(auto) {
+    if (auto) {
+      detail.textContent = '正在重新获取…' + (round > 0 ? '（第 ' + (round + 1) + ' 次）' : '');
+    } else {
+      btn.disabled = true;
+      btn.textContent = '正在重新获取…';
+      detail.textContent = '';
+    }
     try {
-      // cache:'reload' 强制回源，绕过可能已经缓存下来的坏副本，
-      // 成功后好的副本会写回缓存，紧接着的 reload 才拿得到完整文件。
-      const r = await fetch(VUE_SRC, { cache: 'reload' });
-      if (!r.ok) throw new Error('服务器返回 HTTP ' + r.status);
-      const text = await r.text();
-      // 不查字节数（会跟着 Vue 版本变），直接查页面真正要用的入口是否在，
-      // 内容被截断时这一项必然查不到。
-      if (!text.includes('createApp')) {
-        throw new Error('取回的内容不完整（' + text.length + ' 字节，缺 createApp）');
-      }
-      detail.textContent = '已取回 ' + text.length + ' 字节，正在重新载入…';
+      const n = await refetch();
+      // 只在确实要 reload 时记账：这个计数器要挡的就是刷新循环。
+      sessionStorage.setItem(KEY, String(spent + 1));
+      detail.textContent = '已取回 ' + n + ' 字节，正在重新载入…';
       location.reload();
     } catch (e) {
-      btn.disabled = false;
-      btn.textContent = '再试一次';
-      detail.textContent = '重试失败：' + ((e && e.message) || e)
-        + '。若一直失败，换个网络（关掉代理/热点）或停用浏览器插件再试。';
+      const msg = (e && e.message) || String(e);
+      if (auto && ++round < autoLeft) {
+        // 退避：链路刚断时立刻重试大概率还是断的，给它一点恢复时间。
+        detail.textContent = msg + '，稍后自动重试…';
+        setTimeout(() => tryLoad(true), 800 * round);
+        return;
+      }
+      showFailure('重试失败：' + msg
+        + (round > 0 ? '（已自动重试 ' + round + ' 次）' : '')
+        + '。若一直失败，换个网络（关掉代理/热点）或停用浏览器插件再试。');
     }
-  });
+  }
 
-  throw new Error('Vue 不可用，已切到 boot-fail 提示');
+  btn.addEventListener('click', () => tryLoad(false));
+
+  if (autoLeft > 0) {
+    showRetrying();
+    card.hidden = false;
+    tryLoad(true);
+  } else {
+    // 自动重试额度已在本次会话用尽，说明不是偶发丢包，交给用户决定。
+    showFailure('已自动重试多次仍未成功。换个网络（关掉代理/热点）或停用浏览器插件再试。');
+    card.hidden = false;
+  }
+
+  throw new Error('Vue 不可用，已切到 boot-fail 流程');
 }
 const { createApp, ref, reactive, computed, watch, onMounted } = Vue;
 
