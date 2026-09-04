@@ -768,6 +768,7 @@
             <p class="text-[10px] text-rose-700 leading-relaxed">{{ sync.lastError }}</p>
           </div>
           <button @click="doSyncNow" :disabled="sync.busy" class="w-full flex items-center gap-2 px-5 py-3.5 text-xs font-medium text-indigo-600 active:bg-slate-50 transition disabled:opacity-40"><svg class="ico text-[15px]"><use href="#i-refresh-cw" /></svg>立即同步{{ sync.pending > 0 ? '（待上传 ' + sync.pending + ' 项）' : '' }}</button>
+          <button @click="reopenMerge" :disabled="sync.busy" class="w-full flex items-center gap-2 px-5 py-3.5 text-xs font-medium text-slate-500 active:bg-slate-50 transition disabled:opacity-40"><svg class="ico text-[15px]"><use href="#i-shield-alert" /></svg>比对本机与服务器（有冲突时可选）</button>
           <button @click="doPushAll" :disabled="sync.busy" class="w-full flex items-center gap-2 px-5 py-3.5 text-xs font-medium text-slate-500 active:bg-slate-50 transition disabled:opacity-40"><svg class="ico text-[15px]"><use href="#i-upload" /></svg>把本机全部数据上传</button>
           <button @click="doPullAll" :disabled="sync.busy" class="w-full flex items-center gap-2 px-5 py-3.5 text-xs font-medium text-slate-500 active:bg-slate-50 transition disabled:opacity-40"><svg class="ico text-[15px]"><use href="#i-download" /></svg>用服务器数据覆盖本机</button>
           <button @click="doLogout" :disabled="sync.busy" class="w-full flex items-center gap-2 px-5 py-3.5 text-xs font-medium text-rose-600 active:bg-rose-50 transition disabled:opacity-40"><svg class="ico text-[15px]"><use href="#i-log-out" /></svg>退出登录（保留本地数据）</button>
@@ -1023,6 +1024,67 @@
           </button>
         </div>
         <p class="text-center text-[10px] text-slate-400 mt-2.5">存草稿不改变发放金额；定稿后按终稿金额计算。日常打卡记录不受影响。</p>
+      </div>
+    </div>
+  </transition>
+
+  <!-- ===== 首次登录合并：本机与服务器同一天内容不同时，让用户自己选 ===== -->
+  <transition name="drawer">
+    <div v-if="mergeOpen" class="fixed inset-0 z-[55] flex items-end justify-center bg-black/40 backdrop-blur-sm">
+      <div class="w-full max-w-md bg-white rounded-t-3xl px-5 pt-5 pb-6 shadow-2xl overflow-y-auto max-h-[88vh] no-scrollbar">
+
+        <div class="mb-4 pb-3 border-b border-slate-100">
+          <h3 class="text-base font-bold text-slate-800 flex items-center gap-1.5">
+            <svg class="ico text-[18px] text-amber-500"><use href="#i-shield-alert" /></svg>本机与服务器有冲突
+          </h3>
+          <p class="text-[10px] text-slate-400 mt-1 leading-relaxed">
+            下面这{{ mergeRows.length }}项两边内容不一样，需要你决定保留哪份。<span class="text-slate-500 font-medium">其余数据两边都会保留，不会丢。</span>
+          </p>
+        </div>
+
+        <div class="inset bg-slate-50 border border-slate-200/70 p-3 mb-3 flex items-center justify-around text-center">
+          <div>
+            <p class="text-[10px] text-slate-400">本机</p>
+            <p class="text-sm font-bold text-slate-700 font-mono-num">{{ mergeInfo ? mergeInfo.localDays : 0 }} 天</p>
+          </div>
+          <svg class="ico text-base text-slate-300"><use href="#i-refresh-cw" /></svg>
+          <div>
+            <p class="text-[10px] text-slate-400">服务器</p>
+            <p class="text-sm font-bold text-slate-700 font-mono-num">{{ mergeInfo ? mergeInfo.remoteDays : 0 }} 天</p>
+          </div>
+        </div>
+
+        <div class="space-y-2 mb-4">
+          <div v-for="r in mergeRows" :key="r.key" class="inset border border-slate-200/70 p-3">
+            <p class="text-[11px] font-bold text-slate-700 mb-1.5">{{ r.label }}</p>
+            <div class="space-y-1 text-[11px]">
+              <div class="flex justify-between gap-3">
+                <span class="text-slate-400 shrink-0">本机</span>
+                <span class="text-slate-700 text-right">{{ r.local }}</span>
+              </div>
+              <div class="flex justify-between gap-3">
+                <span class="text-slate-400 shrink-0">服务器</span>
+                <span class="text-slate-700 text-right">{{ r.remote }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <button @click="resolveMerge('local')" :disabled="sync.busy"
+            class="w-full py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md active:scale-95 transition disabled:opacity-40">
+            冲突处保留本机（推荐）
+          </button>
+          <button @click="resolveMerge('remote')" :disabled="sync.busy"
+            class="w-full py-3 bg-slate-100 text-slate-600 rounded-xl text-xs font-bold active:scale-95 transition disabled:opacity-40">
+            冲突处改用服务器版本
+          </button>
+          <button @click="deferMerge" :disabled="sync.busy"
+            class="w-full py-2.5 text-[11px] font-medium text-slate-400 active:text-slate-600 transition disabled:opacity-40">
+            先不处理（保持登录，数据都不动）
+          </button>
+        </div>
+        <p class="text-center text-[10px] text-slate-400 mt-2.5 leading-relaxed">合并前会自动留一份本机快照。两边独有的数据一律双向保留。</p>
       </div>
     </div>
   </transition>
@@ -1695,7 +1757,7 @@ createApp({
     // ===== 云端同步（离线优先：本地 localStorage 仍是唯一真相，同步只是额外把数据推到服务器）=====
     const sync = reactive({
       status: 'idle', user: null, pending: 0, lastSyncAt: null, lastError: '',
-      serverUsers: null, apiBase: '', busy: false
+      serverUsers: null, apiBase: '', busy: false, hold: null
     });
     const syncPanelOpen = ref(false);
     const loginForm = ref({ username: '', password: '' });
@@ -1743,21 +1805,27 @@ createApp({
       return rows;
     });
 
-    const syncStatusText = computed(() => ({
-      idle: '未登录·仅存本机',
-      ready: sync.pending > 0 ? `待上传 ${sync.pending} 项` : '已同步',
-      syncing: '同步中…',
-      offline: '连不上服务器·本地照常用',
-      error: '同步出错'
-    })[sync.status] || sync.status);
+    const syncStatusText = computed(() => {
+      if (sync.hold) return '有冲突·已暂停同步';
+      return ({
+        idle: '未登录·仅存本机',
+        ready: sync.pending > 0 ? `待上传 ${sync.pending} 项` : '已同步',
+        syncing: '同步中…',
+        offline: '连不上服务器·本地照常用',
+        error: '同步出错'
+      })[sync.status] || sync.status;
+    });
 
-    const syncStatusClass = computed(() => ({
-      idle: 'text-slate-500 bg-slate-100',
-      ready: sync.pending > 0 ? 'text-amber-700 bg-amber-100' : 'text-emerald-700 bg-emerald-100',
-      syncing: 'text-indigo-700 bg-indigo-100',
-      offline: 'text-amber-700 bg-amber-100',
-      error: 'text-rose-700 bg-rose-100'
-    })[sync.status] || 'text-slate-500 bg-slate-100');
+    const syncStatusClass = computed(() => {
+      if (sync.hold) return 'text-amber-700 bg-amber-100';
+      return ({
+        idle: 'text-slate-500 bg-slate-100',
+        ready: sync.pending > 0 ? 'text-amber-700 bg-amber-100' : 'text-emerald-700 bg-emerald-100',
+        syncing: 'text-indigo-700 bg-indigo-100',
+        offline: 'text-amber-700 bg-amber-100',
+        error: 'text-rose-700 bg-rose-100'
+      })[sync.status] || 'text-slate-500 bg-slate-100';
+    });
 
     const syncTimeText = computed(() => {
       if (!sync.lastSyncAt) return '';
@@ -1837,6 +1905,7 @@ createApp({
     async function runMerge(diff, winner) {
       // 合并前留一份本机快照。远端值落地是不可逆的，出意外至少数据还在。
       window.WHTSync.snapshotLocal('login-merge-' + winner);
+      window.WHTSync.releaseSync();   // 用户已拍板，解除同步冻结
 
       const excludeRecords = winner === 'remote' ? diff.conflict : [];
       const excludeAdjust = winner === 'remote' ? diff.adjustConflict : [];
@@ -1865,10 +1934,13 @@ createApp({
       mergeInfo.value = null;
     });
 
-    // 先不合并：保持登录但不动任何数据。同步面板会留一个入口重新进来。
+    // 先不合并：保持登录但冻结自动同步。
+    // 必须冻结 —— 否则下一次改动触发的 syncNow 会把远端值静默盖到本机冲突日上，
+    // 用户看到的就是「我选了不处理，数据却自己变了」。
     const deferMerge = () => {
       mergeOpen.value = false;
-      showToast('已跳过合并，本机数据未改动');
+      window.WHTSync.holdSync('login-conflict');
+      showToast('已暂停自动同步，本机数据未改动');
     };
 
     const reopenMerge = () => withBusy(async () => {
@@ -1946,6 +2018,7 @@ createApp({
           sync.lastSyncAt = s.lastSyncAt;
           sync.lastError = s.lastError;
           sync.serverUsers = s.serverUsers;
+          sync.hold = s.hold;
         });
         sync.apiBase = window.WHTSync.getApiBase() === location.origin ? '' : window.WHTSync.getApiBase();
         // 探一下服务端在不在、有没有账号，决定设置页该显示「创建账号」还是「登录」
