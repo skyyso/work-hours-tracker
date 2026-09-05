@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>设置 · 底部抽屉面板设计</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+  body { background: #F1F5F9; padding: 24px; color: #0F172A; }
+  h1 { font-size: 24px; font-weight: 800; margin-bottom: 4px; }
+  .sub { font-size: 14px; color: #64748B; margin-bottom: 20px; }
+  .wrap { display: flex; gap: 32px; flex-wrap: wrap; align-items: flex-start; }
+
+  /* ===== 手机外框 ===== */
+  .phone {
+    width: 380px; border-radius: 30px; background: #fff;
+    box-shadow: 0 20px 50px rgba(49,46,129,.25);
+    overflow: hidden; border: 1px solid #E2E8F0; position: relative;
+  }
+  .phone-title { padding: 12px 20px; font-size: 13px; font-weight: 700; color: #64748B; background:#F8FAFC; border-bottom:1px solid #EEF2F7; }
+
+  /* ===== 看板 ===== */
+  .board {
+    background: linear-gradient(135deg,#1E293B 0%,#312E81 56%,#4F46E5 100%);
+    color:#fff; padding: 18px 20px 16px; position: relative;
+  }
+  .board .row1 { display:flex; justify-content:space-between; align-items:center; }
+  .board .month { font-size:16px; font-weight:700; letter-spacing:.5px; }
+  .gear { width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,.16); display:flex; align-items:center; justify-content:center; font-size:16px; cursor:pointer; }
+  .board .money { font-size:34px; font-weight:800; margin-top:6px; font-variant-numeric:tabular-nums; }
+  .board .money small { font-size:15px; opacity:.75; }
+  .board .payout { font-size:12px; color:#C7D2FE; margin-top:4px; }
+  .pills { display:flex; gap:6px; margin-top:14px; }
+  .pill { font-size:11px; padding:4px 10px; border-radius:999px; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.16); }
+
+  /* ===== 日历 ===== */
+  .cal { padding: 12px 14px 16px; }
+  .cal .week { display:grid; grid-template-columns:repeat(7,1fr); text-align:center; font-size:12px; color:#94A3B8; margin-bottom:6px; }
+  .cal .week .sun{color:#F87171;}
+  .cal .week .sat{color:#818CF8;}
+  .cal .grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+  .cell {
+    height:58px; border-radius:10px; padding:3px; border:1px solid #EEF2F7;
+    display:flex; flex-direction:column; justify-content:space-between; position:relative;
+  }
+  .cell .top { display:flex; justify-content:space-between; align-items:center; padding:0 3px; }
+  .cell .day { font-size:13px; font-weight:500; font-variant-numeric:tabular-nums; }
+  .cell .dot { width:5px; height:5px; border-radius:50%; }
+  .dot.green{background:#10B981;} .dot.rose{background:#F43F5E;}
+  .cell .bottom { display:flex; justify-content:center; }
+  .pill-badge { display:inline-flex; align-items:center; gap:1.5px; padding:1px 4px; border-radius:999px; font-size:10px; font-weight:600; white-space:nowrap; }
+  .pill-badge.day{background:#FFF7ED;color:#EA580C;}
+  .pill-badge.night{background:#EEF2FF;color:#4F46E5;}
+  .pill-badge .t{font-weight:700;}
+  .st { font-size:11px; }
+  .st.rest{color:#9CA3AF;} .st.leave{color:#0EA5E9;} .st.empty{color:#D1D5DB;}
+  .cell-day{background:#FFF7ED;border-color:#FED7AA;}
+  .cell-night{background:#EEF2FF;border-color:#C7D2FE;}
+  .cell-rest{background:#F1F5F9;}
+  .cut { border-bottom:2px dashed #94A3B8; }
+
+  /* ===== 底部Tab ===== */
+  .tabbar { border-top:1px solid #E2E8F0; display:flex; }
+  .tab { flex:1; padding:8px 0 10px; text-align:center; font-size:10px; color:#94A3B8; position:relative; }
+  .tab .ic { font-size:19px; display:block; }
+  .tab.on { color:#4F46E5; }
+  .tab.on::before { content:''; position:absolute; top:0; left:50%; transform:translateX(-50%); width:34px; height:3px; border-radius:0 0 6px 6px; background:#4F46E5; }
+
+  /* ===== 抽屉 ===== */
+  .drawer-wrap { position:relative; }
+  .mask { position:absolute; inset:0; border-radius:30px; background:rgba(15,23,42,.45); z-index:2; }
+  .mask .board { border-radius:30px 30px 0 0; height:96px; opacity:.92; }
+  .drawer {
+    position:relative; z-index:3; background:#fff; border-radius:26px 26px 0 0;
+    padding: 10px 20px 20px; box-shadow:0 -12px 40px rgba(15,23,42,.35);
+    margin-top:-1px;
+  }
+  .handle { width:54px; height:5px; border-radius:3px; background:#CBD5E1; margin:4px auto 12px; }
+  .d-title { display:flex; justify-content:space-between; align-items:center; font-size:18px; font-weight:800; margin-bottom:12px; }
+  .d-title .x { color:#94A3B8; font-size:14px; cursor:pointer; }
+  .group-title { font-size:13px; font-weight:700; color:#4F46E5; margin:14px 0 6px; }
+  .card { background:#F8FAFC; border:1px solid #EEF2F7; border-radius:12px; padding:10px 12px; font-size:13px; }
+  .row { display:flex; justify-content:space-between; align-items:center; margin:6px 0; }
+  .row .l { color:#475569; }
+  .input { font-size:13px; font-variant-numeric:tabular-nums; color:#0F172A; font-weight:600; background:#fff; border:1px solid #E2E8F0; border-radius:8px; padding:3px 8px; }
+  .badge-pos { background:#ECFDF5; color:#059669; font-weight:700; padding:2px 8px; border-radius:999px; font-size:12px; }
+  .badge-neg { background:#FFF1F2; color:#E11D48; font-weight:700; padding:2px 8px; border-radius:999px; font-size:12px; }
+  .mini-pill { padding:3px 10px; border-radius:999px; font-size:12px; font-weight:700; }
+  .mini-pill.day{background:#FFEDD5;color:#EA580C;}
+  .mini-pill.night{background:#E0E7FF;color:#4F46E5;}
+  .hint { font-size:11px; color:#94A3B8; margin-top:4px; }
+  .data-item { color:#475569; padding:7px 0; border-bottom:1px solid #EEF2F7; display:flex; justify-content:space-between; }
+  .data-item:last-child{border-bottom:none;}
+  .note { font-size:11px; color:#94A3B8; margin-top:12px; line-height:1.5; }
+
+  /* ===== 说明卡片 ===== */
+  .aside { max-width:420px; background:#EEF2FF; border:1px solid #C7D2FE; border-radius:16px; padding:20px 22px; }
+  .aside h2 { font-size:17px; font-weight:800; color:#312E81; margin-bottom:10px; }
+  .aside ul { margin-left:18px; color:#4338CA; font-size:14px; line-height:1.7; }
+  .decision { margin-top:14px; background:#fff; border-radius:10px; padding:12px 14px; color:#1E293B; font-size:13px; line-height:1.6; }
+  .decision b{color:#4F46E5;}
+</style>
+</head>
+<body>
+  <h1>设置 · 底部抽屉面板（Bottom Drawer）设计</h1>
+  <div class="sub">齿轮触发 → 底部滑出 → 五个设置分区；遮罩点击 / 下滑把手 / ✕ 关闭</div>
+
+  <div class="wrap">
+    <!-- 左：滑出前 -->
+    <div class="phone">
+      <div class="phone-title">① 滑出前 · 日历页（齿轮在右上角）</div>
+      <div class="board">
+        <div class="row1"><span class="month">2026年9月</span><span class="gear">⚙</span></div>
+        <div class="money"><small>¥</small>6,180.0</div>
+        <div class="payout">10日 ¥2,940.0 · 22日 ¥3,240.0</div>
+        <div class="pills">
+          <span class="pill">出勤 16/27</span>
+          <span class="pill">工时 124h</span>
+          <span class="pill">收入 ¥5,000</span>
+        </div>
+      </div>
+      <div class="cal">
+        <div class="week"><span class="sun">日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span class="sat">六</span></div>
+        <div class="grid">
+          <div class="cell"><div class="top"><span class="day">1</span></div><div class="bottom"><span class="st empty">—</span></div></div>
+          <div class="cell cell-day"><div class="top"><span class="day">2</span><span class="dot green"></span></div><div class="bottom"><span class="pill-badge day"><span class="t">白</span> 8h</span></div></div>
+          <div class="cell cell-night"><div class="top"><span class="day">3</span><span class="dot rose"></span></div><div class="bottom"><span class="pill-badge night"><span class="t">夜</span> 10h</span></div></div>
+          <div class="cell cell-rest"><div class="top"><span class="day">4</span></div><div class="bottom"><span class="st rest">休</span></div></div>
+          <div class="cell"><div class="top"><span class="day">5</span></div><div class="bottom"><span class="st empty">—</span></div></div>
+          <div class="cell"><div class="top"><span class="day">6</span></div><div class="bottom"><span class="st empty">—</span></div></div>
+          <div class="cell"><div class="top"><span class="day">7</span></div><div class="bottom"><span class="st empty">—</span></div></div>
+          <!-- 半月分界行 -->
+          <div class="cell cut"><div class="top"><span class="day">8</span></div><div class="bottom"><span class="st empty">—</span></div></div>
+          <div class="cell cut cell-day"><div class="top"><span class="day">9</span></div><div class="bottom"><span class="pill-badge day"><span class="t">白</span> 7.5h</span></div></div>
+          <div class="cell cut cell-night"><div class="top"><span class="day">10</span></div><div class="bottom"><span class="pill-badge night"><span class="t">夜</span> 6.5h</span></div></div>
+        </div>
+      </div>
+      <div class="tabbar">
+        <div class="tab"><span class="ic">📅</span>打卡</div>
+        <div class="tab"><span class="ic">📊</span>汇总</div>
+        <div class="tab on"><span class="ic">⚙</span>设置</div>
+      </div>
+    </div>
+
+    <!-- 右：抽屉展开 -->
+    <div style="display:flex;flex-direction:column;gap:20px;">
+      <div class="phone" style="height:auto;">
+        <div class="phone-title">② 抽屉展开 · 遮罩压暗页面 + 底部滑出设置面板</div>
+        <div class="drawer-wrap">
+          <div class="mask"><div class="board"><div class="month" style="font-size:13px;opacity:.9;">2026年9月 · 日历页（被遮罩压暗）</div></div></div>
+          <div class="drawer">
+            <div class="handle"></div>
+            <div class="d-title">设置 <span class="x">✕ 关闭</span></div>
+
+            <div class="group-title">👛 薪酬规则</div>
+            <div class="card">
+              <div class="row"><span class="l">基础时薪</span><span class="input">19.5 元/h</span></div>
+              <div class="row"><span class="l">满勤天数</span><span class="input">27 天</span></div>
+              <div class="row"><span class="l">满勤奖金/h</span><span class="input">1 元</span></div>
+            </div>
+
+            <div class="group-title">🎖 奖惩标准</div>
+            <div class="card">
+              <div class="row"><span class="l">查获奖励 / 件</span><span class="badge-pos">+¥10</span></div>
+              <div class="row"><span class="l">漏查处罚 / 件</span><span class="badge-neg">-¥20</span></div>
+              <div class="row"><span class="l">满勤达标奖励</span><span class="badge-pos">按工时</span></div>
+            </div>
+
+            <div class="group-title">📆 发放周期</div>
+            <div class="card">
+              <div class="row"><span class="l">上半月工资日 (payDayA)</span><span class="input">22 号</span></div>
+              <div class="row"><span class="l">下半月工资日 (payDayB)</span><span class="input">10 号</span></div>
+              <div class="row"><span class="l">半月分界日 (cutoff)</span><span class="input">15 号</span></div>
+            </div>
+
+            <div class="group-title">🕐 班次默认工时</div>
+            <div class="card">
+              <div class="row"><span class="l">白班 / 夜班默认</span>
+                <span style="display:flex;gap:6px;"><span class="mini-pill day">白 8h</span><span class="mini-pill night">夜 10h</span></span>
+              </div>
+              <div class="hint">夜班跨天，工时全归开始打卡那天</div>
+            </div>
+
+            <div class="group-title">💾 数据</div>
+            <div class="card" style="padding:4px 12px;">
+              <div class="data-item"><span>导出备份（JSON）</span><span style="color:#A0AEC0;">↗</span></div>
+              <div class="data-item"><span>复制数据到剪贴板</span><span style="color:#A0AEC0;">↗</span></div>
+              <div class="data-item"><span>恢复默认设置</span><span style="color:#A0AEC0;">↗</span></div>
+            </div>
+
+            <div class="note">滑出方式：下滑把手 / 点击遮罩 / 点 ✕ 关闭 · 不动 tabs 数组 → 用例20 不受影响</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="aside">
+        <h2>关键决策点</h2>
+        <ul>
+          <li>抽屉内容 = 现有「设置 Tab」整块搬进底部面板</li>
+          <li>三种关闭方式：下滑把手 / 点遮罩 / 点 ✕</li>
+          <li>齿轮按钮（看板右上）+ 底部 Tab「设置」都触发抽屉</li>
+          <li><b>不动 tabs 数组</b> → 用例20 不受影响，规避重写测试</li>
+        </ul>
+        <div class="decision">
+          要落地的话改动范围：新增 <b>settingsOpen</b> 状态 + 抽屉容器模板（复用现有设置表单），从中置「齿轮直达设置页」改为「齿轮/遮罩/下滑开关抽屉」。改动集中、可逆。
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

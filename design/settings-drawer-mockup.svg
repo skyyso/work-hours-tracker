@@ -1,0 +1,165 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1520" viewBox="0 0 1080 1520" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+  <defs>
+    <linearGradient id="hd" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1E293B"/>
+      <stop offset="0.56" stop-color="#312E81"/>
+      <stop offset="1" stop-color="#4F46E5"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="18" flood-color="#312E81" flood-opacity="0.30"/>
+    </filter>
+  </defs>
+
+  <!-- 背景 -->
+  <rect width="1080" height="1520" fill="#F1F5F9"/>
+
+  <!-- 标题 -->
+  <text x="60" y="80" font-size="42" font-weight="800" fill="#0F172A">设置 · 底部抽屉面板（Bottom Drawer）设计</text>
+  <text x="60" y="122" font-size="24" fill="#64748B">齿轮触发 → 底部滑出 → 五个设置分区；遮罩点击/下滑关闭。替代"齿轮直达设置页"。</text>
+  <line x1="60" y1="146" x2="1020" y2="146" stroke="#CBD5E1" stroke-width="2"/>
+
+  <!-- ============ 左：滑出前的页面（日历页参考） ============ -->
+  <g transform="translate(60,220)">
+    <rect width="440" height="900" rx="30" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+    <!-- 顶部渐变看板 -->
+    <rect x="8" y="8" width="424" height="150" rx="24" fill="url(#hd)"/>
+    <text x="40" y="60" font-size="22" fill="#C7D2FE">2026年9月</text>
+    <text x="40" y="105" font-size="34" font-weight="800" fill="#fff">¥ 6,180.0</text>
+    <text x="40" y="132" font-size="16" fill="#C7D2FE">10日 ¥2,940.0 · 22日 ¥3,240.0</text>
+    <!-- 齿轮按钮 -->
+    <circle cx="392" cy="48" r="18" fill="rgba(255,255,255,.16)"/>
+    <text x="376" y="57" font-size="24" fill="#fff">⚙</text>
+    <text x="300" y="92" font-size="13" text-anchor="middle" fill="#A5B4FC" opacity="0.0">.</text>
+    <!-- 胶囊标签行 -->
+    <g font-size="15">
+      <rect x="40" y="138" width="86" height="28" rx="14" fill="rgba(255,255,255,.14)" stroke="rgba(255,255,255,.16)"/>
+      <text x="56" y="158" fill="#E2E8F0">出勤 16</text>
+      <rect x="134" y="138" width="86" height="28" rx="14" fill="rgba(255,255,255,.14)" stroke="rgba(255,255,255,.16)"/>
+      <text x="150" y="158" fill="#E2E8F0">工时 124h</text>
+      <rect x="228" y="138" width="104" height="28" rx="14" fill="rgba(255,255,255,.14)" stroke="rgba(255,255,255,.16)"/>
+      <text x="244" y="158" fill="#FDE68A">收入 ¥5,000</text>
+    </g>
+
+    <!-- 周日头 -->
+    <g transform="translate(36,200)" font-size="15" fill="#94A3B8">
+      <text x="0">日</text><text x="47">一</text><text x="94">二</text><text x="141">三</text>
+      <text x="188">四</text><text x="235">五</text><text x="282">六</text>
+    </g>
+    <!-- 一横行日历格（示意 4 格） -->
+    <g transform="translate(36,232)">
+      <!-- 格1 空 -->
+      <rect width="56" height="62" rx="10" fill="#fff" stroke="#E2E8F0"/>
+      <text x="8" y="18" font-size="16" fill="#1F2937">1</text>
+      <text x="24" y="52" font-size="12" fill="#CBD5E1">—</text>
+      <!-- 格2 白班 -->
+      <rect x="70" width="56" height="62" rx="10" fill="#FFF7ED" stroke="#FED7AA"/>
+      <text x="78" y="18" font-size="16" fill="#1F2937">2</text>
+      <rect x="80" y="2" width="6" height="6" rx="3" fill="#10B981"/>
+      <!-- 白班胶囊 -->
+      <rect x="76" y="34" width="46" height="20" rx="10" fill="#FFEDD5"/>
+      <text x="82" y="48" font-size="13" font-weight="700" fill="#EA580C">白 8h</text>
+      <!-- 格3 夜班 -->
+      <rect x="140" width="56" height="62" rx="10" fill="#EEF2FF" stroke="#C7D2FE"/>
+      <text x="148" y="18" font-size="16" fill="#1F2937">3</text>
+      <rect x="150" y="2" width="6" height="6" rx="3" fill="#F43F5E"/>
+      <!-- 夜班胶囊 -->
+      <rect x="146" y="34" width="46" height="20" rx="10" fill="#E0E7FF"/>
+      <text x="152" y="48" font-size="13" font-weight="700" fill="#4F46E5">夜 10h</text>
+      <!-- 格4 休 -->
+      <rect x="210" width="56" height="62" rx="10" fill="#F1F5F9" stroke="#E2E8F0"/>
+      <text x="218" y="18" font-size="16" fill="#1F2937">4</text>
+      <text x="234" y="48" font-size="13" fill="#9CA3AF">休</text>
+    </g>
+    <text x="36" y="352" font-size="16" fill="#94A3B8">▲ 滑出前：顶部看板 + 齿轮 + 胶囊日历格</text>
+
+    <!-- 底部 Tab -->
+    <g transform="translate(0,810)">
+      <rect width="440" height="66" rx="0" fill="#fff" stroke="#E2E8F0"/>
+      <g text-anchor="middle" font-size="15" fill="#94A3B8">
+        <text x="80" y="30" font-size="24">📅</text><text x="80" y="50">打卡</text>
+        <text x="220" y="30" font-size="24">📊</text><text x="220" y="50">汇总</text>
+        <text x="360" y="30" font-size="24" fill="#4F46E5">⚙</text><text x="360" y="50" fill="#4F46E5">设置</text>
+      </g>
+      <rect x="332" y="0" width="56" height="3" fill="#4F46E5"/>
+    </g>
+    <text x="36" y="360" font-size="16" fill="#64748B">底部 Tab 保留设置项（抽屉打开在 Tab 之上）</text>
+  </g>
+
+  <!-- 分隔箭头 -->
+  <text x="545" y="580" font-size="60" fill="#94A3B8">→</text>
+
+  <!-- ============ 右：抽屉展开状态 ============ -->
+  <g transform="translate(590,190)">
+    <!-- 遮罩 -->
+    <rect width="430" height="940" rx="30" fill="#0F172A" opacity="0.35"/>
+    <!-- 页面底色上露出部分看板顶部 -->
+    <rect x="6" y="6" width="418" height="90" rx="20" fill="url(#hd)" opacity="0.9"/>
+    <text x="28" y="50" font-size="18" fill="#C7D2FE">2026年9月 · 日历页（被遮罩压暗）</text>
+
+    <!-- 抽屉主体：底部滑出 -->
+    <g transform="translate(0,270)" filter="url(#shadow)">
+      <rect width="430" height="670" rx="26" fill="#FFFFFF"/>
+      <!-- 拖拽把手 -->
+      <rect x="185" y="12" width="60" height="5" rx="2.5" fill="#CBD5E1"/>
+      <!-- 抽屉标题 -->
+      <text x="30" y="52" font-size="22" font-weight="800" fill="#0F172A">设置</text>
+      <text x="334" y="50" font-size="18" fill="#94A3B8">✕ 关闭</text>
+      <line x1="30" y1="68" x2="400" y2="68" stroke="#F1F5F9" stroke-width="2"/>
+
+      <!-- 分区① 薪酬规则 -->
+      <text x="30" y="104" font-size="15" font-weight="700" fill="#4F46E5">👛 薪酬规则</text>
+      <rect x="30" y="116" width="370" height="96" rx="12" fill="#F8FAFC" stroke="#EEF2F7"/>
+      <text x="46" y="144" font-size="14" fill="#475569">基础时薪</text>
+      <rect x="270" y="128" width="116" height="40" rx="8" fill="#fff" stroke="#E2E8F0"/>
+      <text x="292" y="155" font-size="15" text-anchor="middle" fill="#0F172A">19.5 元/h</text>
+      <text x="46" y="184" font-size="14" fill="#475569">满勤天数</text>
+      <rect x="270" y="168" width="116" height="34" rx="8" fill="#fff" stroke="#E2E8F0"/>
+      <text x="318" y="191" font-size="15" text-anchor="middle" fill="#0F172A">27 天</text>
+
+      <!-- 分区② 奖惩标准 -->
+      <text x="30" y="244" font-size="15" font-weight="700" fill="#4F46E5">🎖 奖惩标准</text>
+      <rect x="30" y="256" width="370" height="96" rx="12" fill="#F8FAFC" stroke="#EEF2F7"/>
+      <text x="46" y="284" font-size="14" fill="#475569">查获奖励 / 件</text>
+      <rect x="290" y="268" width="96" height="30" rx="8" fill="#ECFDF5"/>
+      <text x="308" y="289" text-anchor="middle" font-size="14" font-weight="700" fill="#059669">+¥10</text>
+      <text x="46" y="324" font-size="14" fill="#475569">漏查处罚 / 件</text>
+      <rect x="290" y="308" width="96" height="30" rx="8" fill="#FFF1F2"/>
+      <text x="308" y="329" text-anchor="middle" font-size="14" font-weight="700" fill="#E11D48">-¥20</text>
+
+      <!-- 分区③ 发放周期 -->
+      <text x="30" y="386" font-size="15" font-weight="700" fill="#4F46E5">📆 发放周期</text>
+      <rect x="30" y="398" width="370" height="86" rx="12" fill="#F8FAFC" stroke="#EEF2F7"/>
+      <text x="46" y="426" font-size="14" fill="#475569">当月发  上半月 → 次月 B 日</text>
+      <text x="46" y="452" font-size="14" fill="#475569">上半月工资日期 (payDayA)</text>
+      <rect x="290" y="410" width="96" height="34" rx="8" fill="#fff" stroke="#E2E8F0"/>
+      <text x="312" y="433" text-anchor="middle" font-size="14" fill="#0F172A">9月22日</text>
+
+      <!-- 分区④ 班次默认工时 -->
+      <text x="30" y="518" font-size="15" font-weight="700" fill="#4F46E5">🕐 班次默认工时</text>
+      <rect x="30" y="530" width="370" height="86" rx="12" fill="#F8FAFC" stroke="#EEF2F7"/>
+      <rect x="46" y="544" width="70" height="30" rx="15" fill="#FFEDD5"/>
+      <text x="58" y="565" font-size="13" font-weight="700" fill="#EA580C">白班 8h</text>
+      <rect x="126" y="544" width="70" height="30" rx="15" fill="#E0E7FF"/>
+      <text x="138" y="565" font-size="13" font-weight="700" fill="#4F46E5">夜班 10h</text>
+      <text x="46" y="600" font-size="12" fill="#94A3B8">夜班跨天，工时全归开始打卡那天</text>
+
+      <!-- 分区⑤ 数据 -->
+      <text x="30" y="650" font-size="15" font-weight="700" fill="#4F46E5">💾 数据</text>
+      <rect x="30" y="660" width="370" height="88" rx="12" fill="#F8FAFC" stroke="#EEF2F7"/>
+      <text x="46" y="688" font-size="14" fill="#475569">导出备份（JSON）</text>
+      <text x="330" y="688" font-size="14" fill="#A0AEC0">↗</text>
+      <line x1="46" y1="704" x2="384" y2="704" stroke="#EEF2F7"/>
+      <text x="46" y="726" font-size="14" fill="#475569">恢复默认设置</text>
+      <text x="330" y="726" font-size="14" fill="#A0AEC0">↗</text>
+      <line x1="46" y1="718" x2="384" y2="718" stroke="#EEF2F7"/>
+
+      <text x="30" y="766" font-size="12" fill="#94A3B8">滑出方式：下滑把手 / 点击遮罩 / 点 ✕ 关闭 · Tab 结构不变，不影响用例20</text>
+    </g>
+  </g>
+
+  <!-- 底部说明 -->
+  <rect x="60" y="1350" width="960" height="110" rx="16" fill="#EEF2FF" stroke="#C7D2FE"/>
+  <text x="90" y="1390" font-size="24" font-weight="700" fill="#312E81">关键决策点</text>
+  <text x="90" y="1426" font-size="20" fill="#4338CA">抽屉内容 = 现有"设置 Tab"整块搬进底部面板，齿轮/遮罩/下滑三种方式开关，底部 Tab 保留"设置"页签</text>
+  <text x="90" y="1456" font-size="18" fill="#6366F1">改动范围：新增 settingsOpen 状态 + 抽屉容器；不动 tabs 数组 → 用例20 不受影响</text>
+</svg>

@@ -1,0 +1,3550 @@
+{
+  "frozenNow": "2026-09-20T10:00:00+08:00",
+  "scenarioCount": 30,
+  "cases": [
+    {
+      "name": "基础分段·上下半月各2天无奖惩",
+      "probe": {
+        "cfg": {
+          "rate": 19.5,
+          "fullDays": 27,
+          "fullBonusPerHour": 1,
+          "foundBonus": 10,
+          "missedPenalty": 20,
+          "cutoff": 15,
+          "payDayA": 22,
+          "payDayB": 10,
+          "dayHours": 8,
+          "nightHours": 10,
+          "defaultShift": "day"
+        },
+        "cur": {
+          "h1": 16,
+          "h2": 20,
+          "totalHours": 36,
+          "workDays": 4,
+          "dayShifts": 4,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 702,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prev": {
+          "h1": 0,
+          "h2": 0,
+          "totalHours": 0,
+          "workDays": 0,
+          "dayShifts": 0,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 0,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prevLabel": {
+          "year": 2026,
+          "month": 7
+        },
+        "nextLabel": {
+          "year": 2026,
+          "month": 9
+        },
+        "flows": {
+          "thisA": 312,
+          "thisB": 0,
+          "nextB": 390,
+          "earnedTotal": 702,
+          "cashTotal": 312,
+          "carry": 390,
+          "paid": 312,
+          "floored": false
+        },
+        "penalties": [],
+        "calendar": {
+          "days": 30,
+          "cutEdge": [
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "payDayA": [
+            22
+          ],
+          "payDayB": [
+            10
+          ],
+          "penaltyFlag": []
+        },
+        "misc": {
+          "fullDaysLeft": 23,
+          "payDayAPassed": false,
+          "isCurrentMonth": true,
+          "recordCount": 4,
+          "boardInt": "702",
+          "boardFrac": ".0",
+          "boardSign": "",
+          "hourOptions": "6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12",
+          "daysInMonth": 30,
+          "firstDayOfWeek": 2
+        }
+      }
+    },
+    {
+      "name": "边界·15日算上半月/16日算下半月",
+      "probe": {
+        "cfg": {
+          "rate": 19.5,
+          "fullDays": 27,
+          "fullBonusPerHour": 1,
+          "foundBonus": 10,
+          "missedPenalty": 20,
+          "cutoff": 15,
+          "payDayA": 22,
+          "payDayB": 10,
+          "dayHours": 8,
+          "nightHours": 10,
+          "defaultShift": "day"
+        },
+        "cur": {
+          "h1": 12,
+          "h2": 12,
+          "totalHours": 24,
+          "workDays": 2,
+          "dayShifts": 2,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 468,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prev": {
+          "h1": 0,
+          "h2": 0,
+          "totalHours": 0,
+          "workDays": 0,
+          "dayShifts": 0,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 0,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prevLabel": {
+          "year": 2026,
+          "month": 7
+        },
+        "nextLabel": {
+          "year": 2026,
+          "month": 9
+        },
+        "flows": {
+          "thisA": 234,
+          "thisB": 0,
+          "nextB": 234,
+          "earnedTotal": 468,
+          "cashTotal": 234,
+          "carry": 234,
+          "paid": 234,
+          "floored": false
+        },
+        "penalties": [],
+        "calendar": {
+          "days": 30,
+          "cutEdge": [
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "payDayA": [
+            22
+          ],
+          "payDayB": [
+            10
+          ],
+          "penaltyFlag": []
+        },
+        "misc": {
+          "fullDaysLeft": 25,
+          "payDayAPassed": false,
+          "isCurrentMonth": true,
+          "recordCount": 2,
+          "boardInt": "468",
+          "boardFrac": ".0",
+          "boardSign": "",
+          "hourOptions": "6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12",
+          "daysInMonth": 30,
+          "firstDayOfWeek": 2
+        }
+      }
+    },
+    {
+      "name": "夜班跨天·15日夜班10h整段进上半月",
+      "probe": {
+        "cfg": {
+          "rate": 19.5,
+          "fullDays": 27,
+          "fullBonusPerHour": 1,
+          "foundBonus": 10,
+          "missedPenalty": 20,
+          "cutoff": 15,
+          "payDayA": 22,
+          "payDayB": 10,
+          "dayHours": 8,
+          "nightHours": 10,
+          "defaultShift": "day"
+        },
+        "cur": {
+          "h1": 10,
+          "h2": 0,
+          "totalHours": 10,
+          "workDays": 1,
+          "dayShifts": 0,
+          "nightShifts": 1,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 195,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prev": {
+          "h1": 0,
+          "h2": 0,
+          "totalHours": 0,
+          "workDays": 0,
+          "dayShifts": 0,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 0,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prevLabel": {
+          "year": 2026,
+          "month": 7
+        },
+        "nextLabel": {
+          "year": 2026,
+          "month": 9
+        },
+        "flows": {
+          "thisA": 195,
+          "thisB": 0,
+          "nextB": 0,
+          "earnedTotal": 195,
+          "cashTotal": 195,
+          "carry": 0,
+          "paid": 195,
+          "floored": false
+        },
+        "penalties": [],
+        "calendar": {
+          "days": 30,
+          "cutEdge": [
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "payDayA": [
+            22
+          ],
+          "payDayB": [
+            10
+          ],
+          "penaltyFlag": []
+        },
+        "misc": {
+          "fullDaysLeft": 26,
+          "payDayAPassed": false,
+          "isCurrentMonth": true,
+          "recordCount": 1,
+          "boardInt": "195",
+          "boardFrac": ".0",
+          "boardSign": "",
+          "hourOptions": "6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12",
+          "daysInMonth": 30,
+          "firstDayOfWeek": 2
+        }
+      }
+    },
+    {
+      "name": "满勤达标·27天×8h",
+      "probe": {
+        "cfg": {
+          "rate": 19.5,
+          "fullDays": 27,
+          "fullBonusPerHour": 1,
+          "foundBonus": 10,
+          "missedPenalty": 20,
+          "cutoff": 15,
+          "payDayA": 22,
+          "payDayB": 10,
+          "dayHours": 8,
+          "nightHours": 10,
+          "defaultShift": "day"
+        },
+        "cur": {
+          "h1": 120,
+          "h2": 96,
+          "totalHours": 216,
+          "workDays": 27,
+          "dayShifts": 27,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 216,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 216,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 4212,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prev": {
+          "h1": 0,
+          "h2": 0,
+          "totalHours": 0,
+          "workDays": 0,
+          "dayShifts": 0,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 0,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prevLabel": {
+          "year": 2026,
+          "month": 7
+        },
+        "nextLabel": {
+          "year": 2026,
+          "month": 9
+        },
+        "flows": {
+          "thisA": 2340,
+          "thisB": 0,
+          "nextB": 2088,
+          "earnedTotal": 4428,
+          "cashTotal": 2340,
+          "carry": 2088,
+          "paid": 2340,
+          "floored": false
+        },
+        "penalties": [],
+        "calendar": {
+          "days": 30,
+          "cutEdge": [
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "payDayA": [
+            22
+          ],
+          "payDayB": [
+            10
+          ],
+          "penaltyFlag": []
+        },
+        "misc": {
+          "fullDaysLeft": 0,
+          "payDayAPassed": false,
+          "isCurrentMonth": true,
+          "recordCount": 27,
+          "boardInt": "4,428",
+          "boardFrac": ".0",
+          "boardSign": "",
+          "hourOptions": "6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12",
+          "daysInMonth": 30,
+          "firstDayOfWeek": 2
+        }
+      }
+    },
+    {
+      "name": "差1天不满勤·26天×8h",
+      "probe": {
+        "cfg": {
+          "rate": 19.5,
+          "fullDays": 27,
+          "fullBonusPerHour": 1,
+          "foundBonus": 10,
+          "missedPenalty": 20,
+          "cutoff": 15,
+          "payDayA": 22,
+          "payDayB": 10,
+          "dayHours": 8,
+          "nightHours": 10,
+          "defaultShift": "day"
+        },
+        "cur": {
+          "h1": 120,
+          "h2": 88,
+          "totalHours": 208,
+          "workDays": 26,
+          "dayShifts": 26,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 4056,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prev": {
+          "h1": 0,
+          "h2": 0,
+          "totalHours": 0,
+          "workDays": 0,
+          "dayShifts": 0,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 0,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prevLabel": {
+          "year": 2026,
+          "month": 7
+        },
+        "nextLabel": {
+          "year": 2026,
+          "month": 9
+        },
+        "flows": {
+          "thisA": 2340,
+          "thisB": 0,
+          "nextB": 1716,
+          "earnedTotal": 4056,
+          "cashTotal": 2340,
+          "carry": 1716,
+          "paid": 2340,
+          "floored": false
+        },
+        "penalties": [],
+        "calendar": {
+          "days": 30,
+          "cutEdge": [
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "payDayA": [
+            22
+          ],
+          "payDayB": [
+            10
+          ],
+          "penaltyFlag": []
+        },
+        "misc": {
+          "fullDaysLeft": 1,
+          "payDayAPassed": false,
+          "isCurrentMonth": true,
+          "recordCount": 26,
+          "boardInt": "4,056",
+          "boardFrac": ".0",
+          "boardSign": "",
+          "hourOptions": "6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12",
+          "daysInMonth": 30,
+          "firstDayOfWeek": 2
+        }
+      }
+    },
+    {
+      "name": "奖惩四项归集·未定稿只记录",
+      "probe": {
+        "cfg": {
+          "rate": 19.5,
+          "fullDays": 27,
+          "fullBonusPerHour": 1,
+          "foundBonus": 10,
+          "missedPenalty": 20,
+          "cutoff": 15,
+          "payDayA": 22,
+          "payDayB": 10,
+          "dayHours": 8,
+          "nightHours": 10,
+          "defaultShift": "day"
+        },
+        "cur": {
+          "h1": 8,
+          "h2": 16,
+          "totalHours": 24,
+          "workDays": 3,
+          "dayShifts": 3,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 3,
+          "missedCount": 2,
+          "otherPenalties": 50,
+          "fullBonus": 0,
+          "foundBonus": 30,
+          "missedPenalty": 40,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": -60,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 468,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prev": {
+          "h1": 0,
+          "h2": 0,
+          "totalHours": 0,
+          "workDays": 0,
+          "dayShifts": 0,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 0,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prevLabel": {
+          "year": 2026,
+          "month": 7
+        },
+        "nextLabel": {
+          "year": 2026,
+          "month": 9
+        },
+        "flows": {
+          "thisA": 156,
+          "thisB": 0,
+          "nextB": 312,
+          "earnedTotal": 468,
+          "cashTotal": 156,
+          "carry": 312,
+          "paid": 156,
+          "floored": false
+        },
+        "penalties": [
+          {
+            "day": 20,
+            "reason": "漏查2件",
+            "amount": 40
+          },
+          {
+            "day": 25,
+            "reason": "迟到",
+            "amount": 50
+          }
+        ],
+        "calendar": {
+          "days": 30,
+          "cutEdge": [
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "payDayA": [
+            22
+          ],
+          "payDayB": [
+            10
+          ],
+          "penaltyFlag": [
+            20,
+            25
+          ]
+        },
+        "misc": {
+          "fullDaysLeft": 24,
+          "payDayAPassed": false,
+          "isCurrentMonth": true,
+          "recordCount": 3,
+          "boardInt": "468",
+          "boardFrac": ".0",
+          "boardSign": "",
+          "hourOptions": "6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12",
+          "daysInMonth": 30,
+          "firstDayOfWeek": 2
+        }
+      }
+    },
+    {
+      "name": "奖惩已定稿-60",
+      "probe": {
+        "cfg": {
+          "rate": 19.5,
+          "fullDays": 27,
+          "fullBonusPerHour": 1,
+          "foundBonus": 10,
+          "missedPenalty": 20,
+          "cutoff": 15,
+          "payDayA": 22,
+          "payDayB": 10,
+          "dayHours": 8,
+          "nightHours": 10,
+          "defaultShift": "day"
+        },
+        "cur": {
+          "h1": 8,
+          "h2": 16,
+          "totalHours": 24,
+          "workDays": 3,
+          "dayShifts": 3,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 3,
+          "missedCount": 2,
+          "otherPenalties": 50,
+          "fullBonus": 0,
+          "foundBonus": 30,
+          "missedPenalty": 40,
+          "adjustNet": -60,
+          "reviewNet": -60,
+          "rawReview": -60,
+          "reviewAmount": -60,
+          "reviewDelta": 0,
+          "basePay": 468,
+          "finalized": true,
+          "adjustStatus": "final"
+        },
+        "prev": {
+          "h1": 0,
+          "h2": 0,
+          "totalHours": 0,
+          "workDays": 0,
+          "dayShifts": 0,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 0,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prevLabel": {
+          "year": 2026,
+          "month": 7
+        },
+        "nextLabel": {
+          "year": 2026,
+          "month": 9
+        },
+        "flows": {
+          "thisA": 156,
+          "thisB": 0,
+          "nextB": 252,
+          "earnedTotal": 408,
+          "cashTotal": 156,
+          "carry": 252,
+          "paid": 156,
+          "floored": false
+        },
+        "penalties": [
+          {
+            "day": 20,
+            "reason": "漏查2件",
+            "amount": 40
+          },
+          {
+            "day": 25,
+            "reason": "迟到",
+            "amount": 50
+          }
+        ],
+        "calendar": {
+          "days": 30,
+          "cutEdge": [
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "payDayA": [
+            22
+          ],
+          "payDayB": [
+            10
+          ],
+          "penaltyFlag": [
+            20,
+            25
+          ]
+        },
+        "misc": {
+          "fullDaysLeft": 24,
+          "payDayAPassed": false,
+          "isCurrentMonth": true,
+          "recordCount": 3,
+          "boardInt": "408",
+          "boardFrac": ".0",
+          "boardSign": "",
+          "hourOptions": "6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12",
+          "daysInMonth": 30,
+          "firstDayOfWeek": 2
+        }
+      }
+    },
+    {
+      "name": "草稿不生效·draft+30",
+      "probe": {
+        "cfg": {
+          "rate": 19.5,
+          "fullDays": 27,
+          "fullBonusPerHour": 1,
+          "foundBonus": 10,
+          "missedPenalty": 20,
+          "cutoff": 15,
+          "payDayA": 22,
+          "payDayB": 10,
+          "dayHours": 8,
+          "nightHours": 10,
+          "defaultShift": "day"
+        },
+        "cur": {
+          "h1": 8,
+          "h2": 0,
+          "totalHours": 8,
+          "workDays": 1,
+          "dayShifts": 1,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 3,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 30,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 30,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 156,
+          "finalized": false,
+          "adjustStatus": "draft"
+        },
+        "prev": {
+          "h1": 0,
+          "h2": 0,
+          "totalHours": 0,
+          "workDays": 0,
+          "dayShifts": 0,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 0,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prevLabel": {
+          "year": 2026,
+          "month": 7
+        },
+        "nextLabel": {
+          "year": 2026,
+          "month": 9
+        },
+        "flows": {
+          "thisA": 156,
+          "thisB": 0,
+          "nextB": 0,
+          "earnedTotal": 156,
+          "cashTotal": 156,
+          "carry": 0,
+          "paid": 156,
+          "floored": false
+        },
+        "penalties": [],
+        "calendar": {
+          "days": 30,
+          "cutEdge": [
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "payDayA": [
+            22
+          ],
+          "payDayB": [
+            10
+          ],
+          "penaltyFlag": []
+        },
+        "misc": {
+          "fullDaysLeft": 26,
+          "payDayAPassed": false,
+          "isCurrentMonth": true,
+          "recordCount": 1,
+          "boardInt": "156",
+          "boardFrac": ".0",
+          "boardSign": "",
+          "hourOptions": "6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12",
+          "daysInMonth": 30,
+          "firstDayOfWeek": 2
+        }
+      }
+    },
+    {
+      "name": "审核改数·累计+30只认+20",
+      "probe": {
+        "cfg": {
+          "rate": 19.5,
+          "fullDays": 27,
+          "fullBonusPerHour": 1,
+          "foundBonus": 10,
+          "missedPenalty": 20,
+          "cutoff": 15,
+          "payDayA": 22,
+          "payDayB": 10,
+          "dayHours": 8,
+          "nightHours": 10,
+          "defaultShift": "day"
+        },
+        "cur": {
+          "h1": 8,
+          "h2": 0,
+          "totalHours": 8,
+          "workDays": 1,
+          "dayShifts": 1,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 3,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 30,
+          "missedPenalty": 0,
+          "adjustNet": 20,
+          "reviewNet": 20,
+          "rawReview": 30,
+          "reviewAmount": 20,
+          "reviewDelta": -10,
+          "basePay": 156,
+          "finalized": true,
+          "adjustStatus": "final"
+        },
+        "prev": {
+          "h1": 0,
+          "h2": 0,
+          "totalHours": 0,
+          "workDays": 0,
+          "dayShifts": 0,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 0,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prevLabel": {
+          "year": 2026,
+          "month": 7
+        },
+        "nextLabel": {
+          "year": 2026,
+          "month": 9
+        },
+        "flows": {
+          "thisA": 156,
+          "thisB": 0,
+          "nextB": 20,
+          "earnedTotal": 176,
+          "cashTotal": 156,
+          "carry": 20,
+          "paid": 156,
+          "floored": false
+        },
+        "penalties": [],
+        "calendar": {
+          "days": 30,
+          "cutEdge": [
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "payDayA": [
+            22
+          ],
+          "payDayB": [
+            10
+          ],
+          "penaltyFlag": []
+        },
+        "misc": {
+          "fullDaysLeft": 26,
+          "payDayAPassed": false,
+          "isCurrentMonth": true,
+          "recordCount": 1,
+          "boardInt": "176",
+          "boardFrac": ".0",
+          "boardSign": "",
+          "hourOptions": "6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12",
+          "daysInMonth": 30,
+          "firstDayOfWeek": 2
+        }
+      }
+    },
+    {
+      "name": "跨月结转·8月未定稿",
+      "probe": {
+        "cfg": {
+          "rate": 19.5,
+          "fullDays": 27,
+          "fullBonusPerHour": 1,
+          "foundBonus": 10,
+          "missedPenalty": 20,
+          "cutoff": 15,
+          "payDayA": 22,
+          "payDayB": 10,
+          "dayHours": 8,
+          "nightHours": 10,
+          "defaultShift": "day"
+        },
+        "cur": {
+          "h1": 16,
+          "h2": 0,
+          "totalHours": 16,
+          "workDays": 2,
+          "dayShifts": 2,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 312,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prev": {
+          "h1": 8,
+          "h2": 30,
+          "totalHours": 38,
+          "workDays": 4,
+          "dayShifts": 4,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 5,
+          "missedCount": 1,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 50,
+          "missedPenalty": 20,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 30,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 741,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prevLabel": {
+          "year": 2026,
+          "month": 7
+        },
+        "nextLabel": {
+          "year": 2026,
+          "month": 9
+        },
+        "flows": {
+          "thisA": 312,
+          "thisB": 585,
+          "nextB": 0,
+          "earnedTotal": 312,
+          "cashTotal": 897,
+          "carry": 0,
+          "paid": 312,
+          "floored": false
+        },
+        "penalties": [],
+        "calendar": {
+          "days": 30,
+          "cutEdge": [
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "payDayA": [
+            22
+          ],
+          "payDayB": [
+            10
+          ],
+          "penaltyFlag": []
+        },
+        "misc": {
+          "fullDaysLeft": 25,
+          "payDayAPassed": false,
+          "isCurrentMonth": true,
+          "recordCount": 6,
+          "boardInt": "312",
+          "boardFrac": ".0",
+          "boardSign": "",
+          "hourOptions": "6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12",
+          "daysInMonth": 30,
+          "firstDayOfWeek": 2
+        }
+      }
+    },
+    {
+      "name": "跨月结转·8月已定稿+30",
+      "probe": {
+        "cfg": {
+          "rate": 19.5,
+          "fullDays": 27,
+          "fullBonusPerHour": 1,
+          "foundBonus": 10,
+          "missedPenalty": 20,
+          "cutoff": 15,
+          "payDayA": 22,
+          "payDayB": 10,
+          "dayHours": 8,
+          "nightHours": 10,
+          "defaultShift": "day"
+        },
+        "cur": {
+          "h1": 16,
+          "h2": 0,
+          "totalHours": 16,
+          "workDays": 2,
+          "dayShifts": 2,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 312,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prev": {
+          "h1": 8,
+          "h2": 30,
+          "totalHours": 38,
+          "workDays": 4,
+          "dayShifts": 4,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 5,
+          "missedCount": 1,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 50,
+          "missedPenalty": 20,
+          "adjustNet": 30,
+          "reviewNet": 30,
+          "rawReview": 30,
+          "reviewAmount": 30,
+          "reviewDelta": 0,
+          "basePay": 741,
+          "finalized": true,
+          "adjustStatus": "final"
+        },
+        "prevLabel": {
+          "year": 2026,
+          "month": 7
+        },
+        "nextLabel": {
+          "year": 2026,
+          "month": 9
+        },
+        "flows": {
+          "thisA": 312,
+          "thisB": 615,
+          "nextB": 0,
+          "earnedTotal": 312,
+          "cashTotal": 927,
+          "carry": 0,
+          "paid": 312,
+          "floored": false
+        },
+        "penalties": [],
+        "calendar": {
+          "days": 30,
+          "cutEdge": [
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "payDayA": [
+            22
+          ],
+          "payDayB": [
+            10
+          ],
+          "penaltyFlag": []
+        },
+        "misc": {
+          "fullDaysLeft": 25,
+          "payDayAPassed": false,
+          "isCurrentMonth": true,
+          "recordCount": 6,
+          "boardInt": "312",
+          "boardFrac": ".0",
+          "boardSign": "",
+          "hourOptions": "6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12",
+          "daysInMonth": 30,
+          "firstDayOfWeek": 2
+        }
+      }
+    },
+    {
+      "name": "跨年边界·2026年1月取2025年12月",
+      "probe": {
+        "cfg": {
+          "rate": 19.5,
+          "fullDays": 27,
+          "fullBonusPerHour": 1,
+          "foundBonus": 10,
+          "missedPenalty": 20,
+          "cutoff": 15,
+          "payDayA": 22,
+          "payDayB": 10,
+          "dayHours": 8,
+          "nightHours": 10,
+          "defaultShift": "day"
+        },
+        "cur": {
+          "h1": 8,
+          "h2": 0,
+          "totalHours": 8,
+          "workDays": 1,
+          "dayShifts": 1,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 156,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prev": {
+          "h1": 0,
+          "h2": 20,
+          "totalHours": 20,
+          "workDays": 2,
+          "dayShifts": 2,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 2,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 20,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 20,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 390,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prevLabel": {
+          "year": 2025,
+          "month": 11
+        },
+        "nextLabel": {
+          "year": 2026,
+          "month": 1
+        },
+        "flows": {
+          "thisA": 156,
+          "thisB": 390,
+          "nextB": 0,
+          "earnedTotal": 156,
+          "cashTotal": 546,
+          "carry": 0,
+          "paid": 156,
+          "floored": false
+        },
+        "penalties": [],
+        "calendar": {
+          "days": 31,
+          "cutEdge": [
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "payDayA": [
+            22
+          ],
+          "payDayB": [
+            10
+          ],
+          "penaltyFlag": []
+        },
+        "misc": {
+          "fullDaysLeft": 26,
+          "payDayAPassed": true,
+          "isCurrentMonth": false,
+          "recordCount": 3,
+          "boardInt": "156",
+          "boardFrac": ".0",
+          "boardSign": "",
+          "hourOptions": "6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12",
+          "daysInMonth": 31,
+          "firstDayOfWeek": 4
+        }
+      }
+    },
+    {
+      "name": "跨年边界·2025-12已定稿+20",
+      "probe": {
+        "cfg": {
+          "rate": 19.5,
+          "fullDays": 27,
+          "fullBonusPerHour": 1,
+          "foundBonus": 10,
+          "missedPenalty": 20,
+          "cutoff": 15,
+          "payDayA": 22,
+          "payDayB": 10,
+          "dayHours": 8,
+          "nightHours": 10,
+          "defaultShift": "day"
+        },
+        "cur": {
+          "h1": 8,
+          "h2": 0,
+          "totalHours": 8,
+          "workDays": 1,
+          "dayShifts": 1,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 156,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prev": {
+          "h1": 0,
+          "h2": 20,
+          "totalHours": 20,
+          "workDays": 2,
+          "dayShifts": 2,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 2,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 20,
+          "missedPenalty": 0,
+          "adjustNet": 20,
+          "reviewNet": 20,
+          "rawReview": 20,
+          "reviewAmount": 20,
+          "reviewDelta": 0,
+          "basePay": 390,
+          "finalized": true,
+          "adjustStatus": "final"
+        },
+        "prevLabel": {
+          "year": 2025,
+          "month": 11
+        },
+        "nextLabel": {
+          "year": 2026,
+          "month": 1
+        },
+        "flows": {
+          "thisA": 156,
+          "thisB": 410,
+          "nextB": 0,
+          "earnedTotal": 156,
+          "cashTotal": 566,
+          "carry": 0,
+          "paid": 156,
+          "floored": false
+        },
+        "penalties": [],
+        "calendar": {
+          "days": 31,
+          "cutEdge": [
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "payDayA": [
+            22
+          ],
+          "payDayB": [
+            10
+          ],
+          "penaltyFlag": []
+        },
+        "misc": {
+          "fullDaysLeft": 26,
+          "payDayAPassed": true,
+          "isCurrentMonth": false,
+          "recordCount": 3,
+          "boardInt": "156",
+          "boardFrac": ".0",
+          "boardSign": "",
+          "hourOptions": "6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12",
+          "daysInMonth": 31,
+          "firstDayOfWeek": 4
+        }
+      }
+    },
+    {
+      "name": "处罚超过下半月工资·未定稿",
+      "probe": {
+        "cfg": {
+          "rate": 19.5,
+          "fullDays": 27,
+          "fullBonusPerHour": 1,
+          "foundBonus": 10,
+          "missedPenalty": 20,
+          "cutoff": 15,
+          "payDayA": 22,
+          "payDayB": 10,
+          "dayHours": 8,
+          "nightHours": 10,
+          "defaultShift": "day"
+        },
+        "cur": {
+          "h1": 0,
+          "h2": 6,
+          "totalHours": 6,
+          "workDays": 1,
+          "dayShifts": 1,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 10,
+          "otherPenalties": 200,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 200,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": -400,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 117,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prev": {
+          "h1": 0,
+          "h2": 0,
+          "totalHours": 0,
+          "workDays": 0,
+          "dayShifts": 0,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 0,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prevLabel": {
+          "year": 2026,
+          "month": 7
+        },
+        "nextLabel": {
+          "year": 2026,
+          "month": 9
+        },
+        "flows": {
+          "thisA": 0,
+          "thisB": 0,
+          "nextB": 117,
+          "earnedTotal": 117,
+          "cashTotal": 0,
+          "carry": 117,
+          "paid": 0,
+          "floored": false
+        },
+        "penalties": [
+          {
+            "day": 20,
+            "reason": "漏查10件·其他扣款",
+            "amount": 400
+          }
+        ],
+        "calendar": {
+          "days": 30,
+          "cutEdge": [
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "payDayA": [
+            22
+          ],
+          "payDayB": [
+            10
+          ],
+          "penaltyFlag": [
+            20
+          ]
+        },
+        "misc": {
+          "fullDaysLeft": 26,
+          "payDayAPassed": false,
+          "isCurrentMonth": true,
+          "recordCount": 1,
+          "boardInt": "117",
+          "boardFrac": ".0",
+          "boardSign": "",
+          "hourOptions": "6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12",
+          "daysInMonth": 30,
+          "firstDayOfWeek": 2
+        }
+      }
+    },
+    {
+      "name": "处罚超过下半月工资·定稿-400触发地板0",
+      "probe": {
+        "cfg": {
+          "rate": 19.5,
+          "fullDays": 27,
+          "fullBonusPerHour": 1,
+          "foundBonus": 10,
+          "missedPenalty": 20,
+          "cutoff": 15,
+          "payDayA": 22,
+          "payDayB": 10,
+          "dayHours": 8,
+          "nightHours": 10,
+          "defaultShift": "day"
+        },
+        "cur": {
+          "h1": 0,
+          "h2": 6,
+          "totalHours": 6,
+          "workDays": 1,
+          "dayShifts": 1,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 10,
+          "otherPenalties": 200,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 200,
+          "adjustNet": -400,
+          "reviewNet": -400,
+          "rawReview": -400,
+          "reviewAmount": -400,
+          "reviewDelta": 0,
+          "basePay": 117,
+          "finalized": true,
+          "adjustStatus": "final"
+        },
+        "prev": {
+          "h1": 0,
+          "h2": 0,
+          "totalHours": 0,
+          "workDays": 0,
+          "dayShifts": 0,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 0,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prevLabel": {
+          "year": 2026,
+          "month": 7
+        },
+        "nextLabel": {
+          "year": 2026,
+          "month": 9
+        },
+        "flows": {
+          "thisA": 0,
+          "thisB": 0,
+          "nextB": 0,
+          "earnedTotal": -283,
+          "cashTotal": 0,
+          "carry": 0,
+          "paid": 0,
+          "floored": true
+        },
+        "penalties": [
+          {
+            "day": 20,
+            "reason": "漏查10件·其他扣款",
+            "amount": 400
+          }
+        ],
+        "calendar": {
+          "days": 30,
+          "cutEdge": [
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "payDayA": [
+            22
+          ],
+          "payDayB": [
+            10
+          ],
+          "penaltyFlag": [
+            20
+          ]
+        },
+        "misc": {
+          "fullDaysLeft": 26,
+          "payDayAPassed": false,
+          "isCurrentMonth": true,
+          "recordCount": 1,
+          "boardInt": "283",
+          "boardFrac": ".0",
+          "boardSign": "-",
+          "hourOptions": "6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12",
+          "daysInMonth": 30,
+          "firstDayOfWeek": 2
+        }
+      }
+    },
+    {
+      "name": "休息请假不计工时",
+      "probe": {
+        "cfg": {
+          "rate": 19.5,
+          "fullDays": 27,
+          "fullBonusPerHour": 1,
+          "foundBonus": 10,
+          "missedPenalty": 20,
+          "cutoff": 15,
+          "payDayA": 22,
+          "payDayB": 10,
+          "dayHours": 8,
+          "nightHours": 10,
+          "defaultShift": "day"
+        },
+        "cur": {
+          "h1": 8,
+          "h2": 0,
+          "totalHours": 8,
+          "workDays": 1,
+          "dayShifts": 1,
+          "nightShifts": 0,
+          "restDays": 2,
+          "leaveDays": 1,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 156,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prev": {
+          "h1": 0,
+          "h2": 0,
+          "totalHours": 0,
+          "workDays": 0,
+          "dayShifts": 0,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 0,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prevLabel": {
+          "year": 2026,
+          "month": 7
+        },
+        "nextLabel": {
+          "year": 2026,
+          "month": 9
+        },
+        "flows": {
+          "thisA": 156,
+          "thisB": 0,
+          "nextB": 0,
+          "earnedTotal": 156,
+          "cashTotal": 156,
+          "carry": 0,
+          "paid": 156,
+          "floored": false
+        },
+        "penalties": [],
+        "calendar": {
+          "days": 30,
+          "cutEdge": [
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "payDayA": [
+            22
+          ],
+          "payDayB": [
+            10
+          ],
+          "penaltyFlag": []
+        },
+        "misc": {
+          "fullDaysLeft": 26,
+          "payDayAPassed": false,
+          "isCurrentMonth": true,
+          "recordCount": 4,
+          "boardInt": "156",
+          "boardFrac": ".0",
+          "boardSign": "",
+          "hourOptions": "6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12",
+          "daysInMonth": 30,
+          "firstDayOfWeek": 2
+        }
+      }
+    },
+    {
+      "name": "脏数据·其他扣款负数夹为0",
+      "probe": {
+        "cfg": {
+          "rate": 19.5,
+          "fullDays": 27,
+          "fullBonusPerHour": 1,
+          "foundBonus": 10,
+          "missedPenalty": 20,
+          "cutoff": 15,
+          "payDayA": 22,
+          "payDayB": 10,
+          "dayHours": 8,
+          "nightHours": 10,
+          "defaultShift": "day"
+        },
+        "cur": {
+          "h1": 0,
+          "h2": 8,
+          "totalHours": 8,
+          "workDays": 1,
+          "dayShifts": 1,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 156,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prev": {
+          "h1": 0,
+          "h2": 0,
+          "totalHours": 0,
+          "workDays": 0,
+          "dayShifts": 0,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 0,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prevLabel": {
+          "year": 2026,
+          "month": 7
+        },
+        "nextLabel": {
+          "year": 2026,
+          "month": 9
+        },
+        "flows": {
+          "thisA": 0,
+          "thisB": 0,
+          "nextB": 156,
+          "earnedTotal": 156,
+          "cashTotal": 0,
+          "carry": 156,
+          "paid": 0,
+          "floored": false
+        },
+        "penalties": [],
+        "calendar": {
+          "days": 30,
+          "cutEdge": [
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "payDayA": [
+            22
+          ],
+          "payDayB": [
+            10
+          ],
+          "penaltyFlag": []
+        },
+        "misc": {
+          "fullDaysLeft": 26,
+          "payDayAPassed": false,
+          "isCurrentMonth": true,
+          "recordCount": 1,
+          "boardInt": "156",
+          "boardFrac": ".0",
+          "boardSign": "",
+          "hourOptions": "6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12",
+          "daysInMonth": 30,
+          "firstDayOfWeek": 2
+        }
+      }
+    },
+    {
+      "name": "月份隔离·不串月",
+      "probe": {
+        "cfg": {
+          "rate": 19.5,
+          "fullDays": 27,
+          "fullBonusPerHour": 1,
+          "foundBonus": 10,
+          "missedPenalty": 20,
+          "cutoff": 15,
+          "payDayA": 22,
+          "payDayB": 10,
+          "dayHours": 8,
+          "nightHours": 10,
+          "defaultShift": "day"
+        },
+        "cur": {
+          "h1": 8,
+          "h2": 0,
+          "totalHours": 8,
+          "workDays": 1,
+          "dayShifts": 1,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 156,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prev": {
+          "h1": 12,
+          "h2": 0,
+          "totalHours": 12,
+          "workDays": 1,
+          "dayShifts": 1,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 234,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prevLabel": {
+          "year": 2026,
+          "month": 7
+        },
+        "nextLabel": {
+          "year": 2026,
+          "month": 9
+        },
+        "flows": {
+          "thisA": 156,
+          "thisB": 0,
+          "nextB": 0,
+          "earnedTotal": 156,
+          "cashTotal": 156,
+          "carry": 0,
+          "paid": 156,
+          "floored": false
+        },
+        "penalties": [],
+        "calendar": {
+          "days": 30,
+          "cutEdge": [
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "payDayA": [
+            22
+          ],
+          "payDayB": [
+            10
+          ],
+          "penaltyFlag": []
+        },
+        "misc": {
+          "fullDaysLeft": 26,
+          "payDayAPassed": false,
+          "isCurrentMonth": true,
+          "recordCount": 3,
+          "boardInt": "156",
+          "boardFrac": ".0",
+          "boardSign": "",
+          "hourOptions": "6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12",
+          "daysInMonth": 30,
+          "firstDayOfWeek": 2
+        }
+      }
+    },
+    {
+      "name": "自定义设置·时薪30/满勤20/单价2/截止10/发薪25与5",
+      "probe": {
+        "cfg": {
+          "rate": 30,
+          "fullDays": 20,
+          "fullBonusPerHour": 2,
+          "foundBonus": 10,
+          "missedPenalty": 20,
+          "cutoff": 10,
+          "payDayA": 25,
+          "payDayB": 5,
+          "dayHours": 8,
+          "nightHours": 10,
+          "defaultShift": "day"
+        },
+        "cur": {
+          "h1": 100,
+          "h2": 100,
+          "totalHours": 200,
+          "workDays": 20,
+          "dayShifts": 20,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 400,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 400,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 6000,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prev": {
+          "h1": 0,
+          "h2": 0,
+          "totalHours": 0,
+          "workDays": 0,
+          "dayShifts": 0,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 0,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prevLabel": {
+          "year": 2026,
+          "month": 7
+        },
+        "nextLabel": {
+          "year": 2026,
+          "month": 9
+        },
+        "flows": {
+          "thisA": 3000,
+          "thisB": 0,
+          "nextB": 3400,
+          "earnedTotal": 6400,
+          "cashTotal": 3000,
+          "carry": 3400,
+          "paid": 3000,
+          "floored": false
+        },
+        "penalties": [],
+        "calendar": {
+          "days": 30,
+          "cutEdge": [
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10
+          ],
+          "payDayA": [
+            25
+          ],
+          "payDayB": [
+            5
+          ],
+          "penaltyFlag": []
+        },
+        "misc": {
+          "fullDaysLeft": 0,
+          "payDayAPassed": false,
+          "isCurrentMonth": true,
+          "recordCount": 20,
+          "boardInt": "6,400",
+          "boardFrac": ".0",
+          "boardSign": "",
+          "hourOptions": "6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12",
+          "daysInMonth": 30,
+          "firstDayOfWeek": 2
+        }
+      }
+    },
+    {
+      "name": "非法设置全部回落默认",
+      "probe": {
+        "cfg": {
+          "rate": 19.5,
+          "fullDays": 27,
+          "fullBonusPerHour": 1,
+          "foundBonus": 10,
+          "missedPenalty": 20,
+          "cutoff": 28,
+          "payDayA": 22,
+          "payDayB": 10,
+          "dayHours": 8,
+          "nightHours": 10,
+          "defaultShift": "day"
+        },
+        "cur": {
+          "h1": 8,
+          "h2": 0,
+          "totalHours": 8,
+          "workDays": 1,
+          "dayShifts": 1,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 156,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prev": {
+          "h1": 0,
+          "h2": 0,
+          "totalHours": 0,
+          "workDays": 0,
+          "dayShifts": 0,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 0,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prevLabel": {
+          "year": 2026,
+          "month": 7
+        },
+        "nextLabel": {
+          "year": 2026,
+          "month": 9
+        },
+        "flows": {
+          "thisA": 156,
+          "thisB": 0,
+          "nextB": 0,
+          "earnedTotal": 156,
+          "cashTotal": 156,
+          "carry": 0,
+          "paid": 156,
+          "floored": false
+        },
+        "penalties": [],
+        "calendar": {
+          "days": 30,
+          "cutEdge": [
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28
+          ],
+          "payDayA": [
+            22
+          ],
+          "payDayB": [
+            10
+          ],
+          "penaltyFlag": []
+        },
+        "misc": {
+          "fullDaysLeft": 26,
+          "payDayAPassed": false,
+          "isCurrentMonth": true,
+          "recordCount": 1,
+          "boardInt": "156",
+          "boardFrac": ".0",
+          "boardSign": "",
+          "hourOptions": "6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12",
+          "daysInMonth": 30,
+          "firstDayOfWeek": 2
+        }
+      }
+    },
+    {
+      "name": "处罚明细排序与原因",
+      "probe": {
+        "cfg": {
+          "rate": 19.5,
+          "fullDays": 27,
+          "fullBonusPerHour": 1,
+          "foundBonus": 10,
+          "missedPenalty": 20,
+          "cutoff": 15,
+          "payDayA": 22,
+          "payDayB": 10,
+          "dayHours": 8,
+          "nightHours": 10,
+          "defaultShift": "day"
+        },
+        "cur": {
+          "h1": 24,
+          "h2": 8,
+          "totalHours": 32,
+          "workDays": 4,
+          "dayShifts": 4,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 3,
+          "otherPenalties": 80,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 60,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": -140,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 624,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prev": {
+          "h1": 0,
+          "h2": 0,
+          "totalHours": 0,
+          "workDays": 0,
+          "dayShifts": 0,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 0,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prevLabel": {
+          "year": 2026,
+          "month": 7
+        },
+        "nextLabel": {
+          "year": 2026,
+          "month": 9
+        },
+        "flows": {
+          "thisA": 468,
+          "thisB": 0,
+          "nextB": 156,
+          "earnedTotal": 624,
+          "cashTotal": 468,
+          "carry": 156,
+          "paid": 468,
+          "floored": false
+        },
+        "penalties": [
+          {
+            "day": 8,
+            "reason": "漏查2件",
+            "amount": 40
+          },
+          {
+            "day": 12,
+            "reason": "漏查1件·其他扣款",
+            "amount": 50
+          },
+          {
+            "day": 25,
+            "reason": "迟到",
+            "amount": 50
+          }
+        ],
+        "calendar": {
+          "days": 30,
+          "cutEdge": [
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "payDayA": [
+            22
+          ],
+          "payDayB": [
+            10
+          ],
+          "penaltyFlag": [
+            8,
+            12,
+            25
+          ]
+        },
+        "misc": {
+          "fullDaysLeft": 23,
+          "payDayAPassed": false,
+          "isCurrentMonth": true,
+          "recordCount": 4,
+          "boardInt": "624",
+          "boardFrac": ".0",
+          "boardSign": "",
+          "hourOptions": "6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12",
+          "daysInMonth": 30,
+          "firstDayOfWeek": 2
+        }
+      }
+    },
+    {
+      "name": "空数据不崩",
+      "probe": {
+        "cfg": {
+          "rate": 19.5,
+          "fullDays": 27,
+          "fullBonusPerHour": 1,
+          "foundBonus": 10,
+          "missedPenalty": 20,
+          "cutoff": 15,
+          "payDayA": 22,
+          "payDayB": 10,
+          "dayHours": 8,
+          "nightHours": 10,
+          "defaultShift": "day"
+        },
+        "cur": {
+          "h1": 0,
+          "h2": 0,
+          "totalHours": 0,
+          "workDays": 0,
+          "dayShifts": 0,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 0,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prev": {
+          "h1": 0,
+          "h2": 0,
+          "totalHours": 0,
+          "workDays": 0,
+          "dayShifts": 0,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 0,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prevLabel": {
+          "year": 2026,
+          "month": 7
+        },
+        "nextLabel": {
+          "year": 2026,
+          "month": 9
+        },
+        "flows": {
+          "thisA": 0,
+          "thisB": 0,
+          "nextB": 0,
+          "earnedTotal": 0,
+          "cashTotal": 0,
+          "carry": 0,
+          "paid": 0,
+          "floored": false
+        },
+        "penalties": [],
+        "calendar": {
+          "days": 30,
+          "cutEdge": [
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "payDayA": [
+            22
+          ],
+          "payDayB": [
+            10
+          ],
+          "penaltyFlag": []
+        },
+        "misc": {
+          "fullDaysLeft": 27,
+          "payDayAPassed": false,
+          "isCurrentMonth": true,
+          "recordCount": 0,
+          "boardInt": "0",
+          "boardFrac": ".0",
+          "boardSign": "",
+          "hourOptions": "6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12",
+          "daysInMonth": 30,
+          "firstDayOfWeek": 2
+        }
+      }
+    },
+    {
+      "name": "越界旧值原样保留·14h与4h",
+      "probe": {
+        "cfg": {
+          "rate": 19.5,
+          "fullDays": 27,
+          "fullBonusPerHour": 1,
+          "foundBonus": 10,
+          "missedPenalty": 20,
+          "cutoff": 15,
+          "payDayA": 22,
+          "payDayB": 10,
+          "dayHours": 8,
+          "nightHours": 10,
+          "defaultShift": "day"
+        },
+        "cur": {
+          "h1": 26.5,
+          "h2": 0,
+          "totalHours": 26.5,
+          "workDays": 3,
+          "dayShifts": 3,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 516.75,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prev": {
+          "h1": 0,
+          "h2": 0,
+          "totalHours": 0,
+          "workDays": 0,
+          "dayShifts": 0,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 0,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prevLabel": {
+          "year": 2026,
+          "month": 7
+        },
+        "nextLabel": {
+          "year": 2026,
+          "month": 9
+        },
+        "flows": {
+          "thisA": 516.75,
+          "thisB": 0,
+          "nextB": 0,
+          "earnedTotal": 516.75,
+          "cashTotal": 516.75,
+          "carry": 0,
+          "paid": 516.75,
+          "floored": false
+        },
+        "penalties": [],
+        "calendar": {
+          "days": 30,
+          "cutEdge": [
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "payDayA": [
+            22
+          ],
+          "payDayB": [
+            10
+          ],
+          "penaltyFlag": []
+        },
+        "misc": {
+          "fullDaysLeft": 24,
+          "payDayAPassed": false,
+          "isCurrentMonth": true,
+          "recordCount": 3,
+          "boardInt": "516",
+          "boardFrac": ".8",
+          "boardSign": "",
+          "hourOptions": "6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12",
+          "daysInMonth": 30,
+          "firstDayOfWeek": 2
+        }
+      }
+    },
+    {
+      "name": "用户实测场景·3天22h含查获1件未定稿",
+      "probe": {
+        "cfg": {
+          "rate": 19.5,
+          "fullDays": 27,
+          "fullBonusPerHour": 1,
+          "foundBonus": 10,
+          "missedPenalty": 20,
+          "cutoff": 15,
+          "payDayA": 22,
+          "payDayB": 10,
+          "dayHours": 8,
+          "nightHours": 10,
+          "defaultShift": "day"
+        },
+        "cur": {
+          "h1": 22,
+          "h2": 0,
+          "totalHours": 22,
+          "workDays": 3,
+          "dayShifts": 3,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 1,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 10,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 10,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 429,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prev": {
+          "h1": 0,
+          "h2": 0,
+          "totalHours": 0,
+          "workDays": 0,
+          "dayShifts": 0,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 0,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prevLabel": {
+          "year": 2026,
+          "month": 7
+        },
+        "nextLabel": {
+          "year": 2026,
+          "month": 9
+        },
+        "flows": {
+          "thisA": 429,
+          "thisB": 0,
+          "nextB": 0,
+          "earnedTotal": 429,
+          "cashTotal": 429,
+          "carry": 0,
+          "paid": 429,
+          "floored": false
+        },
+        "penalties": [],
+        "calendar": {
+          "days": 30,
+          "cutEdge": [
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "payDayA": [
+            22
+          ],
+          "payDayB": [
+            10
+          ],
+          "penaltyFlag": []
+        },
+        "misc": {
+          "fullDaysLeft": 24,
+          "payDayAPassed": false,
+          "isCurrentMonth": true,
+          "recordCount": 3,
+          "boardInt": "429",
+          "boardFrac": ".0",
+          "boardSign": "",
+          "hourOptions": "6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12",
+          "daysInMonth": 30,
+          "firstDayOfWeek": 2
+        }
+      }
+    },
+    {
+      "name": "用户实测场景·同上已定稿+10",
+      "probe": {
+        "cfg": {
+          "rate": 19.5,
+          "fullDays": 27,
+          "fullBonusPerHour": 1,
+          "foundBonus": 10,
+          "missedPenalty": 20,
+          "cutoff": 15,
+          "payDayA": 22,
+          "payDayB": 10,
+          "dayHours": 8,
+          "nightHours": 10,
+          "defaultShift": "day"
+        },
+        "cur": {
+          "h1": 22,
+          "h2": 0,
+          "totalHours": 22,
+          "workDays": 3,
+          "dayShifts": 3,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 1,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 10,
+          "missedPenalty": 0,
+          "adjustNet": 10,
+          "reviewNet": 10,
+          "rawReview": 10,
+          "reviewAmount": 10,
+          "reviewDelta": 0,
+          "basePay": 429,
+          "finalized": true,
+          "adjustStatus": "final"
+        },
+        "prev": {
+          "h1": 0,
+          "h2": 0,
+          "totalHours": 0,
+          "workDays": 0,
+          "dayShifts": 0,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 0,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prevLabel": {
+          "year": 2026,
+          "month": 7
+        },
+        "nextLabel": {
+          "year": 2026,
+          "month": 9
+        },
+        "flows": {
+          "thisA": 429,
+          "thisB": 0,
+          "nextB": 10,
+          "earnedTotal": 439,
+          "cashTotal": 429,
+          "carry": 10,
+          "paid": 429,
+          "floored": false
+        },
+        "penalties": [],
+        "calendar": {
+          "days": 30,
+          "cutEdge": [
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "payDayA": [
+            22
+          ],
+          "payDayB": [
+            10
+          ],
+          "penaltyFlag": []
+        },
+        "misc": {
+          "fullDaysLeft": 24,
+          "payDayAPassed": false,
+          "isCurrentMonth": true,
+          "recordCount": 3,
+          "boardInt": "439",
+          "boardFrac": ".0",
+          "boardSign": "",
+          "hourOptions": "6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12",
+          "daysInMonth": 30,
+          "firstDayOfWeek": 2
+        }
+      }
+    },
+    {
+      "name": "满勤+查获5件未定稿·满勤计奖惩不计",
+      "probe": {
+        "cfg": {
+          "rate": 19.5,
+          "fullDays": 27,
+          "fullBonusPerHour": 1,
+          "foundBonus": 10,
+          "missedPenalty": 20,
+          "cutoff": 15,
+          "payDayA": 22,
+          "payDayB": 10,
+          "dayHours": 8,
+          "nightHours": 10,
+          "defaultShift": "day"
+        },
+        "cur": {
+          "h1": 120,
+          "h2": 96,
+          "totalHours": 216,
+          "workDays": 27,
+          "dayShifts": 27,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 5,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 216,
+          "foundBonus": 50,
+          "missedPenalty": 0,
+          "adjustNet": 216,
+          "reviewNet": 0,
+          "rawReview": 50,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 4212,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prev": {
+          "h1": 0,
+          "h2": 0,
+          "totalHours": 0,
+          "workDays": 0,
+          "dayShifts": 0,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 0,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prevLabel": {
+          "year": 2026,
+          "month": 7
+        },
+        "nextLabel": {
+          "year": 2026,
+          "month": 9
+        },
+        "flows": {
+          "thisA": 2340,
+          "thisB": 0,
+          "nextB": 2088,
+          "earnedTotal": 4428,
+          "cashTotal": 2340,
+          "carry": 2088,
+          "paid": 2340,
+          "floored": false
+        },
+        "penalties": [],
+        "calendar": {
+          "days": 30,
+          "cutEdge": [
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "payDayA": [
+            22
+          ],
+          "payDayB": [
+            10
+          ],
+          "penaltyFlag": []
+        },
+        "misc": {
+          "fullDaysLeft": 0,
+          "payDayAPassed": false,
+          "isCurrentMonth": true,
+          "recordCount": 27,
+          "boardInt": "4,428",
+          "boardFrac": ".0",
+          "boardSign": "",
+          "hourOptions": "6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12",
+          "daysInMonth": 30,
+          "firstDayOfWeek": 2
+        }
+      }
+    },
+    {
+      "name": "满勤+查获5件已定稿+50·两项全计",
+      "probe": {
+        "cfg": {
+          "rate": 19.5,
+          "fullDays": 27,
+          "fullBonusPerHour": 1,
+          "foundBonus": 10,
+          "missedPenalty": 20,
+          "cutoff": 15,
+          "payDayA": 22,
+          "payDayB": 10,
+          "dayHours": 8,
+          "nightHours": 10,
+          "defaultShift": "day"
+        },
+        "cur": {
+          "h1": 120,
+          "h2": 96,
+          "totalHours": 216,
+          "workDays": 27,
+          "dayShifts": 27,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 5,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 216,
+          "foundBonus": 50,
+          "missedPenalty": 0,
+          "adjustNet": 266,
+          "reviewNet": 50,
+          "rawReview": 50,
+          "reviewAmount": 50,
+          "reviewDelta": 0,
+          "basePay": 4212,
+          "finalized": true,
+          "adjustStatus": "final"
+        },
+        "prev": {
+          "h1": 0,
+          "h2": 0,
+          "totalHours": 0,
+          "workDays": 0,
+          "dayShifts": 0,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 0,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prevLabel": {
+          "year": 2026,
+          "month": 7
+        },
+        "nextLabel": {
+          "year": 2026,
+          "month": 9
+        },
+        "flows": {
+          "thisA": 2340,
+          "thisB": 0,
+          "nextB": 2138,
+          "earnedTotal": 4478,
+          "cashTotal": 2340,
+          "carry": 2138,
+          "paid": 2340,
+          "floored": false
+        },
+        "penalties": [],
+        "calendar": {
+          "days": 30,
+          "cutEdge": [
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "payDayA": [
+            22
+          ],
+          "payDayB": [
+            10
+          ],
+          "penaltyFlag": []
+        },
+        "misc": {
+          "fullDaysLeft": 0,
+          "payDayAPassed": false,
+          "isCurrentMonth": true,
+          "recordCount": 27,
+          "boardInt": "4,478",
+          "boardFrac": ".0",
+          "boardSign": "",
+          "hourOptions": "6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12",
+          "daysInMonth": 30,
+          "firstDayOfWeek": 2
+        }
+      }
+    },
+    {
+      "name": "历史月份·看8月（payDayA 已过）",
+      "probe": {
+        "cfg": {
+          "rate": 19.5,
+          "fullDays": 27,
+          "fullBonusPerHour": 1,
+          "foundBonus": 10,
+          "missedPenalty": 20,
+          "cutoff": 15,
+          "payDayA": 22,
+          "payDayB": 10,
+          "dayHours": 8,
+          "nightHours": 10,
+          "defaultShift": "day"
+        },
+        "cur": {
+          "h1": 8,
+          "h2": 10,
+          "totalHours": 18,
+          "workDays": 2,
+          "dayShifts": 2,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 351,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prev": {
+          "h1": 0,
+          "h2": 0,
+          "totalHours": 0,
+          "workDays": 0,
+          "dayShifts": 0,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 0,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prevLabel": {
+          "year": 2026,
+          "month": 6
+        },
+        "nextLabel": {
+          "year": 2026,
+          "month": 8
+        },
+        "flows": {
+          "thisA": 156,
+          "thisB": 0,
+          "nextB": 195,
+          "earnedTotal": 351,
+          "cashTotal": 156,
+          "carry": 195,
+          "paid": 156,
+          "floored": false
+        },
+        "penalties": [],
+        "calendar": {
+          "days": 31,
+          "cutEdge": [
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "payDayA": [
+            22
+          ],
+          "payDayB": [
+            10
+          ],
+          "penaltyFlag": []
+        },
+        "misc": {
+          "fullDaysLeft": 25,
+          "payDayAPassed": true,
+          "isCurrentMonth": false,
+          "recordCount": 2,
+          "boardInt": "351",
+          "boardFrac": ".0",
+          "boardSign": "",
+          "hourOptions": "6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12",
+          "daysInMonth": 31,
+          "firstDayOfWeek": 6
+        }
+      }
+    },
+    {
+      "name": "未来月份·看10月（payDayA 未过）",
+      "probe": {
+        "cfg": {
+          "rate": 19.5,
+          "fullDays": 27,
+          "fullBonusPerHour": 1,
+          "foundBonus": 10,
+          "missedPenalty": 20,
+          "cutoff": 15,
+          "payDayA": 22,
+          "payDayB": 10,
+          "dayHours": 8,
+          "nightHours": 10,
+          "defaultShift": "day"
+        },
+        "cur": {
+          "h1": 8,
+          "h2": 10,
+          "totalHours": 18,
+          "workDays": 2,
+          "dayShifts": 2,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 351,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prev": {
+          "h1": 0,
+          "h2": 0,
+          "totalHours": 0,
+          "workDays": 0,
+          "dayShifts": 0,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 0,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prevLabel": {
+          "year": 2026,
+          "month": 8
+        },
+        "nextLabel": {
+          "year": 2026,
+          "month": 10
+        },
+        "flows": {
+          "thisA": 156,
+          "thisB": 0,
+          "nextB": 195,
+          "earnedTotal": 351,
+          "cashTotal": 156,
+          "carry": 195,
+          "paid": 156,
+          "floored": false
+        },
+        "penalties": [],
+        "calendar": {
+          "days": 31,
+          "cutEdge": [
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "payDayA": [
+            22
+          ],
+          "payDayB": [
+            10
+          ],
+          "penaltyFlag": []
+        },
+        "misc": {
+          "fullDaysLeft": 25,
+          "payDayAPassed": false,
+          "isCurrentMonth": false,
+          "recordCount": 2,
+          "boardInt": "351",
+          "boardFrac": ".0",
+          "boardSign": "",
+          "hourOptions": "6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12",
+          "daysInMonth": 31,
+          "firstDayOfWeek": 4
+        }
+      }
+    },
+    {
+      "name": "班次默认工时越界·白班2h夜班20h",
+      "probe": {
+        "cfg": {
+          "rate": 19.5,
+          "fullDays": 27,
+          "fullBonusPerHour": 1,
+          "foundBonus": 10,
+          "missedPenalty": 20,
+          "cutoff": 15,
+          "payDayA": 22,
+          "payDayB": 10,
+          "dayHours": 6,
+          "nightHours": 12,
+          "defaultShift": "day"
+        },
+        "cur": {
+          "h1": 0,
+          "h2": 0,
+          "totalHours": 0,
+          "workDays": 0,
+          "dayShifts": 0,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 0,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prev": {
+          "h1": 0,
+          "h2": 0,
+          "totalHours": 0,
+          "workDays": 0,
+          "dayShifts": 0,
+          "nightShifts": 0,
+          "restDays": 0,
+          "leaveDays": 0,
+          "foundCount": 0,
+          "missedCount": 0,
+          "otherPenalties": 0,
+          "fullBonus": 0,
+          "foundBonus": 0,
+          "missedPenalty": 0,
+          "adjustNet": 0,
+          "reviewNet": 0,
+          "rawReview": 0,
+          "reviewAmount": 0,
+          "reviewDelta": 0,
+          "basePay": 0,
+          "finalized": false,
+          "adjustStatus": null
+        },
+        "prevLabel": {
+          "year": 2026,
+          "month": 7
+        },
+        "nextLabel": {
+          "year": 2026,
+          "month": 9
+        },
+        "flows": {
+          "thisA": 0,
+          "thisB": 0,
+          "nextB": 0,
+          "earnedTotal": 0,
+          "cashTotal": 0,
+          "carry": 0,
+          "paid": 0,
+          "floored": false
+        },
+        "penalties": [],
+        "calendar": {
+          "days": 30,
+          "cutEdge": [
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "payDayA": [
+            22
+          ],
+          "payDayB": [
+            10
+          ],
+          "penaltyFlag": []
+        },
+        "misc": {
+          "fullDaysLeft": 27,
+          "payDayAPassed": false,
+          "isCurrentMonth": true,
+          "recordCount": 0,
+          "boardInt": "0",
+          "boardFrac": ".0",
+          "boardSign": "",
+          "hourOptions": "6,6.5,7,7.5,8,8.5,9,9.5,10,10.5,11,11.5,12",
+          "daysInMonth": 30,
+          "firstDayOfWeek": 2
+        }
+      }
+    }
+  ]
+}

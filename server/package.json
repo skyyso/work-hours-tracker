@@ -1,0 +1,19 @@
+{
+  "name": "work-hours-tracker-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "工时记账服务端：平台无关核心 + 可替换存储适配器（VPS node:sqlite / Cloudflare D1）",
+  "main": "node-server.js",
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning node-server.js",
+    "test": "node --disable-warning=ExperimentalWarning test/api.test.js",
+    "schema:dump": "node scripts/dump-schema.js",
+    "cf:dev": "wrangler dev",
+    "cf:deploy": "wrangler deploy",
+    "cf:migrate": "wrangler d1 execute work-hours --remote --file=./core/schema.sql"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  }
+}

@@ -1,0 +1,27 @@
+# Cloudflare Workers 部署配置
+#
+# 用前必做：
+#   1. wrangler d1 create work-hours
+#      → 把输出里的 database_id 填到下面
+#   2. npm run cf:migrate      # 等价 wrangler d1 execute work-hours --remote --file=./core/schema.sql
+#   3. npm run cf:deploy
+#
+# 注意：Workers 上的 core/api.js 完全不变，只有存储适配器从 node:sqlite 换成 D1。
+
+name = "work-hours-tracker"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+# 静态资源（index.html 等）。目录指向项目根，即 server/ 的上一层。
+[assets]
+directory = "../"
+binding = "ASSETS"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "work-hours"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+
+[vars]
+# "1" 开放注册；留空/删除则只允许在「库里还没有任何用户」时注册首个账号
+ALLOW_REGISTER = ""

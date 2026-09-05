@@ -1,0 +1,8 @@
+{
+  "name": "wht-css-build",
+  "private": true,
+  "description": "只用于把 Tailwind CDN 的运行时编译换成预生成静态 CSS，不参与运行时",
+  "devDependencies": {
+    "tailwindcss": "3.4.17"
+  }
+}

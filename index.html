@@ -1110,6 +1110,14 @@
     </div>
   </div>
 
+  <!-- 薪酬核算纯模块：与 Node 测试共用同一份。
+       必须排在下面那块内联脚本之前，setup() 直接读 WHTPayroll。
+       它不依赖 Vue，也不依赖 DOM，加载顺序只要在内联脚本前面就行。
+       注意：这段注释里刻意不写出 script 开标签的字面量 ——
+       测试 harness 与 verify_payroll.js 都用正则抠内联脚本，
+       注释里出现那个字面量会被当成开标签，抠出来的就是注释残片（实测踩过）。 -->
+  <script src="shared/payroll.js"></script>
+
   <!-- 离线优先的同步引擎：不依赖 Vue，独立于页面逻辑，方便以后套 APP 壳复用 -->
   <script src="sync.js"></script>
 <script>
@@ -1126,8 +1134,16 @@
 // 而原来的做法是立刻把卡片糊在用户脸上，让人手动点一下按钮去做机器该做的事。
 // 那张卡除了逼用户点按钮，不提供任何它自己解决不了的信息。
 // 现在改成：先静默自动重试，只有连续失败才显示卡片。
-if (typeof Vue === 'undefined') {
-  const VUE_SRC = 'vendor/vue.global.prod.js';
+// 启动硬依赖清单。原来只盯 Vue，现在 shared/payroll.js 也是跑不起就白屏的一环，
+// 而它同样是个要过网的文件——实测过这条链路会丢包，所以重试守卫必须一并盖住。
+// probe 是“取回的文本里必然出现的串”，用来分辨“取到了但被截断”——不查字节数，
+// 字节数会跟着版本变，忘了更新就是一个假阴性。
+const BOOT_DEPS = [
+  { name: 'Vue', src: 'vendor/vue.global.prod.js', probe: 'createApp', label: '渲染引擎' },
+  { name: 'WHTPayroll', src: 'shared/payroll.js', probe: 'WHTPayroll', label: '薪酬核算模块' }
+];
+const bootMissing = BOOT_DEPS.filter((d) => typeof globalThis[d.name] === 'undefined');
+if (bootMissing.length) {
   const card = document.getElementById('boot-fail');
   const title = document.getElementById('boot-title');
   const desc = document.getElementById('boot-desc');
@@ -1149,12 +1165,16 @@ if (typeof Vue === 'undefined') {
   const autoLeft = Math.max(0, MAX_AUTO - spent);
   let round = 0;
 
-  const FAIL_DESC = '渲染引擎 <code class="font-mono-num">vue.global.prod.js</code> 没能就位，界面画不出来。<br />'
+  // 文案按实际缺的那几项拼，不写死“渲染引擎”——缺的是哪个就说哪个。
+  const MISS_TEXT = bootMissing
+    .map((d) => d.label + ' <code class="font-mono-num">' + d.src.split('/').pop() + '</code>')
+    .join('、');
+  const FAIL_DESC = MISS_TEXT + ' 没能就位，界面画不出来。<br />'
     + '你的打卡数据存在这台设备本机，跟这次失败无关，一条都不会丢。';
 
   function showRetrying() {
     title.textContent = '正在加载…';
-    desc.innerHTML = '渲染引擎还没到位，正在自动重新获取。<br />你的打卡数据存在本机，一条都不会丢。';
+    desc.innerHTML = MISS_TEXT + ' 还没到位，正在自动重新获取。<br />你的打卡数据存在本机，一条都不会丢。';
     btn.hidden = true;
   }
 
@@ -1167,19 +1187,21 @@ if (typeof Vue === 'undefined') {
     detail.textContent = msg;
   }
 
-  /** 取一次 Vue 并验完整性，成功返回字节数。 */
+  /** 把缺的依赖逐个取一遍并验完整性，成功返回总字节数。 */
   async function refetch() {
-    // cache:'reload' 强制回源，绕过可能已经缓存下来的坏副本，
-    // 成功后好的副本会写回缓存，紧接着的 reload 才拿得到完整文件。
-    const r = await fetch(VUE_SRC, { cache: 'reload' });
-    if (!r.ok) throw new Error('服务器返回 HTTP ' + r.status);
-    const text = await r.text();
-    // 不查字节数（会跟着 Vue 版本变），直接查页面真正要用的入口是否在，
-    // 内容被截断时这一项必然查不到。
-    if (!text.includes('createApp')) {
-      throw new Error('取回的内容不完整（' + text.length + ' 字节，缺 createApp）');
+    let total = 0;
+    for (const d of bootMissing) {
+      // cache:'reload' 强制回源，绕过可能已经缓存下来的坏副本，
+      // 成功后好的副本会写回缓存，紧接着的 reload 才拿得到完整文件。
+      const r = await fetch(d.src, { cache: 'reload' });
+      if (!r.ok) throw new Error(d.src + ' 返回 HTTP ' + r.status);
+      const text = await r.text();
+      if (!text.includes(d.probe)) {
+        throw new Error(d.src + ' 内容不完整（' + text.length + ' 字节，缺 ' + d.probe + '）');
+      }
+      total += text.length;
     }
-    return text.length;
+    return total;
   }
 
   async function tryLoad(auto) {
@@ -1222,37 +1244,26 @@ if (typeof Vue === 'undefined') {
     card.hidden = false;
   }
 
-  throw new Error('Vue 不可用，已切到 boot-fail 流程');
+  throw new Error('启动依赖缺失（' + bootMissing.map((d) => d.name).join(', ') + '），已切到 boot-fail 流程');
 }
 const { createApp, ref, reactive, computed, watch, onMounted } = Vue;
 
+// 薪酬口径全部住在 shared/payroll.js，这里只做“接线”：把纯函数包成 Vue 的 computed。
+// 为什么不直接在模板里写 WHTPayroll.xxx：下面保留了一批同名薄包装（aggregateMonth / isCutEdge …），
+// 模板与各调用处一行都不用改 —— 这次重构只换实现，不换接口，出问题好定位。
+const P = WHTPayroll;
+
 createApp({
   setup() {
-    // ===== 默认规则 =====
-    const DEFAULTS = {
-      rate: 19.5,            // 基础时薪，当月工资只含工时
-      fullDays: 27,          // 满勤门槛（天）
-      fullBonusPerHour: 1,   // 满勤奖 = 当月总工时 × 该单价（属奖励，次月结）
-      foundBonus: 10,        // 查获违禁品 元/件
-      missedPenalty: 20,     // 漏查违禁品 元/件
-      cutoff: 15,            // 上半月截止日
-      payDayA: 22,           // 上半月工时 → 当月该日发
-      payDayB: 10,           // 下半月工时 + 当月奖惩 → 次月该日发
-      dayHours: 8,           // 白班默认工时
-      nightHours: 10,        // 夜班默认工时
-      defaultShift: 'day'    // 打卡默认班次：'day' 白班 / 'night' 夜班
-    };
+    // ===== 默认规则与字段标签 =====
+    // 口径常量只存 shared/payroll.js 一份。之前两处各留一份，改时薪要改两个文件，
+    // 忘一个就是页面与测试对不上 —— 那种不一致最难查，因为两边各自都「自洽」。
+    const DEFAULTS = P.DEFAULTS;
+    // 设置字段的中文名：登录合并冲突对照时要给人看，不能直接抱 key
+    const SETTING_LABELS = P.SETTING_LABELS;
 
     const settings = reactive({ ...DEFAULTS });
     const records = ref({});
-
-    // 设置字段的中文名：登录合并冲突对照时要给人看，不能直接抱 key
-    const SETTING_LABELS = {
-      rate: '基础时薪', fullDays: '满勤门槛（天）', fullBonusPerHour: '满勤奖单价',
-      foundBonus: '查获奖励/件', missedPenalty: '漏查处罚/件', cutoff: '上半月截止日',
-      payDayA: '发薪日 A', payDayB: '发薪日 B', dayHours: '白班默认工时',
-      nightHours: '夜班默认工时', defaultShift: '默认班次'
-    };
 
     // 月度奖惩终稿：key = 'YYYY-MM'
     // { status:'draft'|'final', finalAmount:Number|null, note:String, finalizedAt:ISOString }
@@ -1261,46 +1272,17 @@ createApp({
     const monthAdjust = ref({});
 
     // ===== 工时口径：6–12h，0.5 步进 =====
-    const HOUR_MIN = 6, HOUR_MAX = 12, HOUR_STEP = 0.5;
-    const hourOptions = [];
-    for (let h = HOUR_MIN; h <= HOUR_MAX + 1e-9; h += HOUR_STEP) hourOptions.push(Math.round(h * 10) / 10);
+    // hInt/hFrac 专供日历格子拆开渲染：小数位占固定宽度槽位，8 与 8.5 的整数部才能左右对齐。
+    // clampHours 只归一「设置里的班次默认工时」，不改已保存的打卡记录
+    //   （旧数据里 14h 这类越界值必须原样保留，用例已钉住）。
+    // sn 必须先判空：Number(null) 与 Number('') 都等于 0，少这一步「清空时薪输入框」会把时薪静默变成 0。
+    const { HOUR_MIN, HOUR_MAX, HOUR_STEP, hourOptions, hInt, hFrac, clampHours, sn } = P;
 
-    // 整数部与小数部拆开渲染（仅用于日历格子）：小数位占固定宽度槽位，
-    // 这样 8 与 8.5 的整数部左右对齐，不会形成错位。
-    const hInt = (v) => Math.floor(Number(v) || 0);
-    const hFrac = (v) => (Number(v) || 0) % 1 === 0.5 ? '.5' : '';
-
-    // 仅用于归一「设置里的班次默认工时」，保证默认值落在可选范围内。
-    // 不对已保存的打卡记录做任何改写。
-    const clampHours = (v, fallback) => {
-      const n = Number(v);
-      if (!Number.isFinite(n)) return fallback === undefined ? DEFAULTS.dayHours : fallback;
-      const snapped = Math.round(n / HOUR_STEP) * HOUR_STEP;
-      return Math.min(HOUR_MAX, Math.max(HOUR_MIN, snapped));
-    };
-
-    // ===== 数值兜底：输入框清空 / 脏数据时回落默认值，不让计算变 0 或 NaN =====
-    // 注意 Number(null) 与 Number('') 都等于 0，必须先判空，否则清空输入框会把时薪静默变成 0。
-    const sn = (v, d) => {
-      if (v === null || v === undefined || v === '') return d;
-      const n = Number(v);
-      return Number.isFinite(n) && n >= 0 ? n : d;
-    };
-    const cfg = computed(() => ({
-      rate: sn(settings.rate, DEFAULTS.rate),
-      fullDays: Math.round(sn(settings.fullDays, DEFAULTS.fullDays)) || DEFAULTS.fullDays,
-      fullBonusPerHour: sn(settings.fullBonusPerHour, DEFAULTS.fullBonusPerHour),
-      foundBonus: sn(settings.foundBonus, DEFAULTS.foundBonus),
-      missedPenalty: sn(settings.missedPenalty, DEFAULTS.missedPenalty),
-      cutoff: Math.min(28, Math.max(1, Math.round(sn(settings.cutoff, DEFAULTS.cutoff)))),
-      // payDayA/payDayB 原本只用于文案展示，现在参与日历发薪日判定，必须进 cfg 做同样的洗值，
-      // 否则 payDayKind() 拿到 undefined，比较永远不命中，角标与内描边都不会出现。
-      payDayA: Math.min(31, Math.max(1, Math.round(sn(settings.payDayA, DEFAULTS.payDayA)))),
-      payDayB: Math.min(31, Math.max(1, Math.round(sn(settings.payDayB, DEFAULTS.payDayB)))),
-      dayHours: clampHours(sn(settings.dayHours, DEFAULTS.dayHours), DEFAULTS.dayHours),
-      nightHours: clampHours(sn(settings.nightHours, DEFAULTS.nightHours), DEFAULTS.nightHours),
-      defaultShift: settings.defaultShift === 'night' ? 'night' : 'day'
-    }));
+    // 洗过的有效配置：所有算钱逻辑只认这个值，不直接读原始 settings。
+    // 包成 computed 是为了让 settings 每次改动都重洗一遍并触发下游重算。
+    // payDayA/payDayB 也必须一起洗 —— 它们现在参与日历发薪日判定，
+    // 拿到 undefined 时 payDayKind() 比较永不命中，角标与内描边会整个消失。
+    const cfg = computed(() => P.normalizeSettings(settings));
 
     // ===== 页签 =====
     const tab = ref('calendar');
@@ -1333,130 +1315,49 @@ createApp({
       setTimeout(() => { if (toast.value === msg) toast.value = ''; }, 2000);
     };
 
-    function newDraft(shift) {
-      return {
-        status: 'work',
-        shift_type: shift,
-        hours: shift === 'night' ? cfg.value.nightHours : cfg.value.dayHours,
-        contraband_found: 0,
-        contraband_missed: 0,
-        other_penalty: null,
-        penalty_reason: ''
-      };
-    }
+    const newDraft = (shift) => P.newDraft(shift, cfg.value);
     const draftRecord = ref(newDraft(cfg.value.defaultShift));
 
     // ===== 日期辅助 =====
-    const daysInMonth = computed(() => new Date(currentYear.value, currentMonth.value + 1, 0).getDate());
-    const firstDayOfWeek = computed(() => new Date(currentYear.value, currentMonth.value, 1).getDay());
-    const monthPrefix = (y, m) => `${y}-${String(m + 1).padStart(2, '0')}-`;
-    const keyOf = (y, m, d) => monthPrefix(y, m) + String(d).padStart(2, '0');
-    const monthKeyOf = (y, m) => `${y}-${String(m + 1).padStart(2, '0')}`;
-    const getMonthAdjust = (y, m) => monthAdjust.value[monthKeyOf(y, m)] || null;
+    const { monthPrefix, keyOf, monthKeyOf, prevMonthOf, nextMonthOf } = P;
+    const daysInMonth = computed(() => P.daysInMonth(currentYear.value, currentMonth.value));
+    const firstDayOfWeek = computed(() => P.firstDayOfWeek(currentYear.value, currentMonth.value));
+    const getMonthAdjust = (y, m) => P.getMonthAdjust(monthAdjust.value, y, m);
     const getRecord = (day) => records.value[keyOf(currentYear.value, currentMonth.value, day)];
-    const prevMonthOf = (y, m) => m === 0 ? { year: y - 1, month: 11 } : { year: y, month: m - 1 };
-    const nextMonthOf = (y, m) => m === 11 ? { year: y + 1, month: 0 } : { year: y, month: m + 1 };
 
-    const isToday = (day) => {
-      const n = new Date();
-      return n.getFullYear() === currentYear.value && n.getMonth() === currentMonth.value && n.getDate() === day;
-    };
-    const isCurrentMonth = computed(() => {
-      const n = new Date();
-      return n.getFullYear() === currentYear.value && n.getMonth() === currentMonth.value;
-    });
+    // 这两个要读「今天」。模块里不允许自己取 now（否则测试基准每天都不一样），
+    // 所以由调用方决定：页面上就是省略实参，让模块回落到 new Date()。
+    const isToday = (day) => P.isSameDay(currentYear.value, currentMonth.value, day);
+    const isCurrentMonth = computed(() => P.isCurrentMonth(currentYear.value, currentMonth.value));
 
-    const fmt = (n) => (Number(n) || 0).toFixed(1);
-    const money = (n) => '¥' + (Number(n) || 0).toFixed(1);
-    const signed = (n) => { const v = Number(n) || 0; return (v >= 0 ? '+¥' : '-¥') + Math.abs(v).toFixed(1); };
-
-    // 金额拆成 符号/整数部/小数部，供看板主数字分层渲染（大字只放整数部）。
-    // 必须从 toFixed(1) 的结果上切，不能用 Math.floor 另算，
+    // moneyParts 把金额拆成 符号/整数部/小数部，供看板主数字分层渲染（大字只放整数部）。
+    // 它必须从 toFixed(1) 的结果上切，不能用 Math.floor 另算，
     // 否则 99.96 会被 money() 进为 100.0、而拆分出 99.0，两处数字对不上。
-    const moneyParts = (n) => {
-      const v = Number(n) || 0;
-      const s = Math.abs(v).toFixed(1);
-      const dot = s.indexOf('.');
-      return {
-        sign: v < 0 ? '-' : '',
-        int: s.slice(0, dot).replace(/\B(?=(\d{3})+(?!\d))/g, ','),   // 千分位
-        frac: s.slice(dot)
-      };
-    };
+    const { fmt, money, signed, moneyParts } = P;
 
     // ===== 核心聚合：本月 / 上月共用同一套口径 =====
-    // 夜班跨天：工时全部归入开始打卡的那一天。
-    const aggregateMonth = (year, month) => {
-      const c = cfg.value;
-      const prefix = monthPrefix(year, month);
-      let h1 = 0, h2 = 0, workDays = 0, dayShifts = 0, nightShifts = 0, restDays = 0, leaveDays = 0;
-      let foundCount = 0, missedCount = 0, otherPenalties = 0;
-
-      for (const key in records.value) {
-        if (key.indexOf(prefix) !== 0) continue;
-        const rec = records.value[key];
-        if (!rec) continue;
-        if (rec.status === 'rest') { restDays++; continue; }
-        if (rec.status === 'leave') { leaveDays++; continue; }
-        if (rec.status !== 'work') continue;
-
-        const day = Number(key.slice(prefix.length));
-        const hours = Number(rec.hours || 0);
-        if (day <= c.cutoff) h1 += hours; else h2 += hours;
-
-        workDays++;
-        if (rec.shift_type === 'night') nightShifts++; else dayShifts++;
-        foundCount += Number(rec.contraband_found || 0);
-        missedCount += Number(rec.contraband_missed || 0);
-        otherPenalties += Math.max(0, Number(rec.other_penalty || 0));
-      }
-
-      const totalHours = h1 + h2;
-      // 满勤奖只由出勤天数客观判定，不参与人工审核修正
-      const fullBonus = workDays >= c.fullDays ? totalHours * c.fullBonusPerHour : 0;
-      const foundBonus = foundCount * c.foundBonus;
-      const missedPenalty = missedCount * c.missedPenalty;
-
-      // 日常累计奖惩 = 查获 - 漏查 - 其他扣款（不含满勤奖）。
-      // 这只是「记录」，不是可发金额：查获多少件当月只记账，实际奖金要等次月初组长
-      // 审核提交、扣掉漏查与其他扣款后才确定。
-      const rawReview = foundBonus - missedPenalty - otherPenalties;
-
-      // 与「满勤未达标 → 满勤奖按 0 计」同一个道理：
-      // 奖惩未定稿 → 一律按 0 计，不进任何应得/发放口径；只有定稿后才用审核终稿金额。
-      const adj = getMonthAdjust(year, month);
-      const finalized = !!(adj && adj.status === 'final' && Number.isFinite(Number(adj.finalAmount)));
-      const reviewAmount = finalized ? Number(adj.finalAmount) : 0;
-      const reviewDelta = finalized ? reviewAmount - rawReview : 0;
-      // 计入应得的奖惩净额：未定稿恒为 0，页面单列这一项并标明「未定稿不计」。
-      const reviewNet = reviewAmount;
-      // 发放净额 = 满勤奖 + 已定稿奖惩。次月 payDayB 这两笔与下半月工时一起发，
-      // 「挣得」与「结转」两套口径都复用它，保证同名同数。
-      const adjustNet = fullBonus + reviewNet;
-
-      return {
-        h1, h2, totalHours, workDays, dayShifts, nightShifts, restDays, leaveDays,
-        foundCount, missedCount, otherPenalties,
-        fullBonus, foundBonus, missedPenalty, adjustNet, reviewNet,
-        rawReview, reviewAmount, reviewDelta, finalized,
-        adjustStatus: adj ? adj.status : null,
-        adjustNote: adj && adj.note ? adj.note : '',
-        finalizedAt: adj && adj.finalizedAt ? adj.finalizedAt : '',
-        basePay: totalHours * c.rate
-      };
-    };
+    // 口径本体在 shared/payroll.js。这里只把响应式数据打包成它要的 ctx，
+    // 保留同名薄包装是刻意的：模板与下面十几处调用一行都不用改。
+    //
+    // 口径要点（细节与用例见 payroll.js 顶部注释）：
+    //   夜班跨天工时整段归开始打卡那天；满勤未达标 → 满勤奖按 0；
+    //   奖惩未经组长审核定稿 → 一律按 0（同一个道理）。
+    const payrollCtx = () => ({ records: records.value, monthAdjust: monthAdjust.value, cfg: cfg.value });
+    const aggregateMonth = (year, month) => P.aggregateMonth(year, month, payrollCtx());
 
     const prevLabel = computed(() => prevMonthOf(currentYear.value, currentMonth.value));
     const nextLabel = computed(() => nextMonthOf(currentYear.value, currentMonth.value));
     const monthStats = computed(() => aggregateMonth(currentYear.value, currentMonth.value));
     const prevStats = computed(() => aggregateMonth(prevLabel.value.year, prevLabel.value.month));
 
-    // 发放口径：
-    // 当月 payDayA = 当月 1–cutoff 工时 × rate
-    // 当月 payDayB = 上月 cutoff+1–月底 工时 × rate + 上月奖惩净额
-    const payoutThisA = computed(() => Math.max(0, monthStats.value.h1 * cfg.value.rate));
-    const payoutThisB = computed(() => Math.max(0, prevStats.value.h2 * cfg.value.rate + prevStats.value.adjustNet));
-    const payoutNextB = computed(() => Math.max(0, monthStats.value.h2 * cfg.value.rate + monthStats.value.adjustNet));
+    // 发放口径与两套记账口径一次算齐（细节见 payroll.js 的 flowsOf 注释）：
+    //   当月 payDayA = 当月 1–cutoff 工时 × rate
+    //   当月 payDayB = 上月 cutoff+1–月底 工时 × rate + 上月奖惩净额
+    // 必须走同一个 flowsOf：结转与「次月实际到账」若各算一遍，迟早漂成两个数。
+    const flows = computed(() => P.flowsOf({ cur: monthStats.value, prev: prevStats.value, cfg: cfg.value }));
+    const payoutThisA = computed(() => flows.value.thisA);
+    const payoutThisB = computed(() => flows.value.thisB);
+    const payoutNextB = computed(() => flows.value.nextB);
 
     // ===== 两套记账口径（这是页面之前最主要的歧义源） =====
     // 归属制「挣得」：本月 1–月底干出来的钱，不管什么时候发。打一天卡当天就涨。
@@ -1467,46 +1368,21 @@ createApp({
     //   = 工时收入 + 满勤奖（未达 27 天为 0）+ 奖惩净额（未定稿取日常累计，已定稿取终稿）
     //   adjustNet 本身 = fullBonus + reviewAmount，正好是「满勤奖 + 奖惩净额」。
     //   打卡页大字与汇总页「合计应得」共用这一个值，不再有两个不同的「挣得」。
-    const earnedTotal = computed(() => monthStats.value.basePay + monthStats.value.adjustNet);
-    const cashTotal = computed(() => payoutThisB.value + payoutThisA.value);
+    const earnedTotal = computed(() => flows.value.earnedTotal);
+    const cashTotal = computed(() => flows.value.cashTotal);
     // 「挣得」拆成两笔落地时间：上半月工时随本月 payDayA；下半月工时 + 奖惩结转次月 payDayB。
     // 这一行是两套口径之间唯一的桥，解释了为何挣得 ≠ 进账。
     // 注意：结转那笔只用「已确认的奖惩」，满勤奖月底才确定，不计入挣得（另作预估展示）。
     // 决策2：结转 = 次月 payDayB 实际到账那一笔，必须含满勤奖（业务规则：满勤奖压到次月 10 号发）。
     //   直接复用 payoutNextB，保证「结转」与「次月实际上账」永远同一个数，不再出现账目缺口。
-    const earnedCarry = computed(() => payoutNextB.value);
-    const earnedSplit = computed(() => ({ paid: payoutThisA.value, carry: earnedCarry.value }));
+    const earnedCarry = computed(() => flows.value.carry);
+    const earnedSplit = computed(() => flows.value.split);
     // 上半月那笔到没到账，只在看当前月份时才有「待发」说法；翻历史月份一律算已发。
-    const payDayAPassed = computed(() => {
-      if (!isCurrentMonth.value) {
-        const n = new Date();
-        return currentYear.value < n.getFullYear() ||
-          (currentYear.value === n.getFullYear() && currentMonth.value < n.getMonth());
-      }
-      return new Date().getDate() >= cfg.value.payDayA;
-    });
+    const payDayAPassed = computed(() => P.payDayAPassed(currentYear.value, currentMonth.value, cfg.value));
     // 处罚吃穿下半月工时时，结转那笔被 ¥0 兰住，于是 paid+carry > earnedTotal。页面需要明说。
-    const earnedFloored = computed(() => monthStats.value.h2 * cfg.value.rate + monthStats.value.adjustNet < 0);
+    const earnedFloored = computed(() => flows.value.floored);
 
-    const penaltyDetails = computed(() => {
-      const c = cfg.value;
-      const prefix = monthPrefix(currentYear.value, currentMonth.value);
-      const out = [];
-      for (const key in records.value) {
-        if (key.indexOf(prefix) !== 0) continue;
-        const r = records.value[key];
-        if (!r || r.status !== 'work') continue;
-        const missed = Number(r.contraband_missed || 0);
-        const other = Math.max(0, Number(r.other_penalty || 0));
-        const amount = missed * c.missedPenalty + other;
-        if (amount <= 0) continue;
-        const parts = [];
-        if (missed > 0) parts.push(`漏查${missed}件`);
-        if (other > 0) parts.push(r.penalty_reason ? r.penalty_reason : '其他扣款');
-        out.push({ day: Number(key.slice(prefix.length)), reason: parts.join('·'), amount });
-      }
-      return out.sort((a, b) => a.day - b.day);
-    });
+    const penaltyDetails = computed(() => P.penaltyDetails(currentYear.value, currentMonth.value, payrollCtx()));
 
     const recordCount = computed(() => Object.keys(records.value).length);
 
@@ -1514,7 +1390,7 @@ createApp({
     // 明细行三项（工时收入 + 满勤奖 + 奖惩净额）相加必须严丝合缝等于这个大字。
     const boardMain = computed(() => moneyParts(earnedTotal.value));
     // 距满勤还差几天（达标后为 0），供顶部进度胶囊使用
-    const fullDaysLeft = computed(() => Math.max(0, cfg.value.fullDays - monthStats.value.workDays));
+    const fullDaysLeft = computed(() => P.fullDaysLeft(monthStats.value, cfg.value));
 
     const hasPenalty = (day) => {
       const r = getRecord(day);
@@ -1523,12 +1399,7 @@ createApp({
 
     // 发薪日判定：'a' = 当月 payDayA（上半月工时，线上）；'b' = 当月 payDayB（上月下半月工时 + 上月奖惩，线下）
     // 只做统计标注，不处理"遇周末顺延"，实际到账日以单位为准。
-    const payDayKind = (day) => {
-      const c = cfg.value;
-      if (day === c.payDayA) return 'a';
-      if (day === c.payDayB) return 'b';
-      return null;
-    };
+    const payDayKind = (day) => P.payDayKind(day, cfg.value);
 
     // 选中日如果是发薪日，打卡抽屉顶部展示该笔到账（不打断打卡主流程）
     const selectedPayInfo = computed(() => {
@@ -1553,10 +1424,7 @@ createApp({
     // 上下半月分界格：7 列网格里 day+7 就在 day 正下方，
     // 所以给 cutoff-6 … cutoff 这 7 格加底虚线，正好描出一条完整分界线，
     // 而且不需要往网格里插额外元素，星期对齐不会被打买。
-    const isCutEdge = (day) => {
-      const c = cfg.value.cutoff;
-      return day <= c && day + 7 > c;
-    };
+    const isCutEdge = (day) => P.isCutEdge(day, cfg.value);
 
     const cellClass = (day) => {
       const r = getRecord(day);
@@ -1688,14 +1556,8 @@ createApp({
     };
 
     const saveRecord = () => {
-      const op = Number(draftRecord.value.other_penalty);
-      draftRecord.value.other_penalty = (Number.isFinite(op) && op > 0) ? op : null;
-      if (draftRecord.value.status !== 'work') {
-        draftRecord.value.contraband_found = 0;
-        draftRecord.value.contraband_missed = 0;
-        draftRecord.value.other_penalty = null;
-        draftRecord.value.penalty_reason = '';
-      }
+      // 原地归一：非正扣款回落 null；非「上班」日清空全部奖惩字段
+      P.normalizeDraft(draftRecord.value);
       const dayKey = keyOf(currentYear.value, currentMonth.value, selectedDay.value);
       records.value[dayKey] = JSON.parse(JSON.stringify(draftRecord.value));
       persist(dayKey);

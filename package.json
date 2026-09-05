@@ -1,0 +1,17 @@
+{
+  "name": "work-hours-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "工时记账：单文件前端 + 薪酬纯模块（shared/payroll.js）+ 平台无关服务端（server/）",
+  "scripts": {
+    "test": "npm run test:payroll && npm run test:server",
+    "test:payroll": "node --test-reporter=spec --test test/payroll.test.js test/app-parity.test.js test/baseline.test.js",
+    "test:server": "npm --prefix server test",
+    "baseline": "node tools/gen-baseline.js",
+    "baseline:write": "node tools/gen-baseline.js --write",
+    "start": "npm --prefix server start"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  }
+}
