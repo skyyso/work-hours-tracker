@@ -86,21 +86,30 @@ npm run test
 ```
 
 #### 步骤三：Systemd 服务配置
-创建系统服务文件 `/etc/systemd/system/work-hours-tracker.service`：
+仓库内已带与线上运行一致的单元文件 `server/work-hours-tracker.service`，拷贝后启用即可：
+```bash
+cp server/work-hours-tracker.service /etc/systemd/system/work-hours-tracker.service
+# 部署路径不同时，先修改单元文件里的 WorkingDirectory 再 daemon-reload
+systemctl daemon-reload
+systemctl enable --now work-hours-tracker.service
+```
+
+单元文件关键内容（端口固定 9522：localStorage 按 origin 隔离，换端口 = 换 origin，
+已有打卡数据会看不见，勿改）：
 ```ini
 [Unit]
-Description=Work Hours Tracker Service
+Description=Work Hours Tracker (Node: static + sync API)
 After=network.target
 
 [Service]
 Type=simple
 User=root
-WorkingDirectory=/root/.openclaw/workspace/work-hours-tracker
-ExecStart=/usr/bin/node server/index.js
+WorkingDirectory=/root/.openclaw/workspace/work-hours-tracker/server
+ExecStart=/usr/bin/node --disable-warning=ExperimentalWarning node-server.js
+Environment=PORT=9522
+Environment=HOST=0.0.0.0
 Restart=always
 RestartSec=3
-Environment=NODE_ENV=production
-Environment=PORT=9522
 
 [Install]
 WantedBy=multi-user.target
