@@ -1102,11 +1102,13 @@
     <div class="card p-6 text-center w-full">
       <p id="boot-title" class="text-sm font-bold text-slate-800">页面没能加载完成</p>
       <p id="boot-desc" class="text-xs text-slate-500 mt-2 leading-relaxed">
-        渲染引擎 <code class="font-mono-num">vue.global.prod.js</code> 没能就位，界面画不出来。<br />
-        你的打卡数据存在这台设备本机，跟这次失败无关，一条都不会丢。
+        部分资源加载失败，界面暂时打不开。<br />
+        你的打卡数据存在这台设备本机，跟这次失败无关，一条都不会丢。<br />
+        一直失败的话，换个网络（关掉代理/热点）或停用浏览器插件再试。
       </p>
       <button id="boot-retry" type="button" class="mt-4 w-full py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md active:scale-95 transition disabled:opacity-40">重试加载</button>
       <p id="boot-detail" class="text-[11px] text-slate-400 mt-3 leading-relaxed break-all"></p>
+      <button id="boot-copy" type="button" hidden style="margin-top:10px;font-size:11px;color:#94a3b8;background:none;border:none;text-decoration:underline;cursor:pointer;">复制诊断信息</button>
     </div>
   </div>
 
@@ -1149,6 +1151,15 @@ if (bootMissing.length) {
   const desc = document.getElementById('boot-desc');
   const btn = document.getElementById('boot-retry');
   const detail = document.getElementById('boot-detail');
+  const copyBtn = document.getElementById('boot-copy');
+
+  // 技术细节统一进这里：console.warn 留排查痕迹，bootDiag 供「复制诊断信息」整段带走。
+  // 卡片上不再出现 HTTP 状态码、字节数、重试次数这类内容——那是给开发者看的。
+  const bootDiag = [];
+  const bootLog = (msg) => {
+    bootDiag.push('[' + new Date().toISOString() + '] ' + msg);
+    console.warn('[boot-guard] ' + msg);
+  };
 
   document.getElementById('app').remove();
 
@@ -1165,26 +1176,30 @@ if (bootMissing.length) {
   const autoLeft = Math.max(0, MAX_AUTO - spent);
   let round = 0;
 
-  // 文案按实际缺的那几项拼，不写死“渲染引擎”——缺的是哪个就说哪个。
-  const MISS_TEXT = bootMissing
-    .map((d) => d.label + ' <code class="font-mono-num">' + d.src.split('/').pop() + '</code>')
-    .join('、');
-  const FAIL_DESC = MISS_TEXT + ' 没能就位，界面画不出来。<br />'
-    + '你的打卡数据存在这台设备本机，跟这次失败无关，一条都不会丢。';
+  bootLog('启动依赖缺失: ' + bootMissing.map((d) => d.name + ' (' + d.src + ', probe=' + d.probe + ')').join(', '));
+
+  // 卡片文案全部去技术化：不出现文件名、状态码、字节数、重试次数。
+  // 完整技术信息只走 console 与「复制诊断信息」出口。
+  const RETRY_TEXT = '正在恢复连接…';
+  const FAIL_DESC = '部分资源加载失败，界面暂时打不开。<br />'
+    + '你的打卡数据存在这台设备本机，跟这次失败无关，一条都不会丢。<br />'
+    + '一直失败的话，换个网络（关掉代理/热点）或停用浏览器插件再试。';
 
   function showRetrying() {
     title.textContent = '正在加载…';
-    desc.innerHTML = MISS_TEXT + ' 还没到位，正在自动重新获取。<br />你的打卡数据存在本机，一条都不会丢。';
+    desc.innerHTML = RETRY_TEXT + '<br />你的打卡数据存在本机，一条都不会丢。';
     btn.hidden = true;
+    copyBtn.hidden = true;
   }
 
-  function showFailure(msg) {
+  function showFailure() {
     title.textContent = '页面没能加载完成';
     desc.innerHTML = FAIL_DESC;
     btn.hidden = false;
     btn.disabled = false;
     btn.textContent = '再试一次';
-    detail.textContent = msg;
+    detail.textContent = '';
+    copyBtn.hidden = false;
   }
 
   /** 把缺的依赖逐个取一遍并验完整性，成功返回总字节数。 */
@@ -1206,33 +1221,76 @@ if (bootMissing.length) {
 
   async function tryLoad(auto) {
     if (auto) {
-      detail.textContent = '正在重新获取…' + (round > 0 ? '（第 ' + (round + 1) + ' 次）' : '');
+      detail.textContent = RETRY_TEXT;
     } else {
       btn.disabled = true;
-      btn.textContent = '正在重新获取…';
+      btn.textContent = RETRY_TEXT;
       detail.textContent = '';
     }
     try {
       const n = await refetch();
       // 只在确实要 reload 时记账：这个计数器要挡的就是刷新循环。
       sessionStorage.setItem(KEY, String(spent + 1));
-      detail.textContent = '已取回 ' + n + ' 字节，正在重新载入…';
+      bootLog('重取成功，共 ' + n + ' 字节，即将 reload');
+      detail.textContent = '已恢复，正在重新载入…';
       location.reload();
     } catch (e) {
       const msg = (e && e.message) || String(e);
+      bootLog('重取失败: ' + msg);
       if (auto && ++round < autoLeft) {
         // 退避：链路刚断时立刻重试大概率还是断的，给它一点恢复时间。
-        detail.textContent = msg + '，稍后自动重试…';
+        detail.textContent = '连接不太稳定，稍后自动重试…';
         setTimeout(() => tryLoad(true), 800 * round);
         return;
       }
-      showFailure('重试失败：' + msg
-        + (round > 0 ? '（已自动重试 ' + round + ' 次）' : '')
-        + '。若一直失败，换个网络（关掉代理/热点）或停用浏览器插件再试。');
+      bootLog('最终失败：本轮共尝试 ' + (round + 1) + ' 次，转人工重试');
+      showFailure();
     }
   }
 
   btn.addEventListener('click', () => tryLoad(false));
+
+  // 「复制诊断信息」：技术细节的唯一出口。平时隐藏，失败态才出现，
+  // 点一下把完整诊断（环境 + 全部 boot 日志）复制进剪贴板。
+  function diagText() {
+    return [
+      '工时打卡 启动诊断',
+      '时间: ' + new Date().toISOString(),
+      '页面: ' + location.href,
+      'UA: ' + navigator.userAgent,
+      '自动重试: 已用 ' + spent + '/' + MAX_AUTO + '，本轮共尝试 ' + round + ' 次',
+      '缺失依赖: ' + bootMissing.map((d) => d.name + ' (' + d.src + ', probe=' + d.probe + ')').join(', '),
+      '---',
+      bootDiag.join('\n') || '(无更多日志)'
+    ].join('\n');
+  }
+  function legacyCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+  copyBtn.addEventListener('click', async () => {
+    const text = diagText();
+    let ok = false;
+    try {
+      if (navigator.clipboard) { await navigator.clipboard.writeText(text); ok = true; }
+    } catch (e) { ok = false; }
+    if (!ok) ok = legacyCopy(text);
+    if (ok) {
+      copyBtn.textContent = '✅ 已复制';
+      setTimeout(() => { copyBtn.textContent = '复制诊断信息'; }, 1500);
+    } else {
+      // 非 HTTPS 环境剪贴板 API 常不可用，兜底让用户手动复制。
+      window.prompt('自动复制不可用，请手动复制：', text);
+    }
+  });
 
   if (autoLeft > 0) {
     showRetrying();
@@ -1240,7 +1298,8 @@ if (bootMissing.length) {
     tryLoad(true);
   } else {
     // 自动重试额度已在本次会话用尽，说明不是偶发丢包，交给用户决定。
-    showFailure('已自动重试多次仍未成功。换个网络（关掉代理/热点）或停用浏览器插件再试。');
+    bootLog('自动重试额度已用尽（上限 ' + MAX_AUTO + ' 次），转人工重试');
+    showFailure();
     card.hidden = false;
   }
 
