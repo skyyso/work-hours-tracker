@@ -15,7 +15,7 @@
  * vendor ?v= 指纹变化会触发重下，PRECACHE 键值同步更新即可。旧缓存条目
  * activate 时统一清理，不做遗留兜底。
  */
-const VERSION = 'v1';
+const VERSION = 'v2';
 const PRECACHE = `wht-precache-${VERSION}`;
 const RUNTIME = `wht-runtime-${VERSION}`;
 
@@ -66,7 +66,9 @@ async function networkFirst(request, cacheName) {
     if (res && res.ok) cache.put(request, res.clone());
     return res;
   } catch (e) {
-    const cached = await cache.match(request, { ignoreSearch: request.mode === 'navigate' });
+    // ignoreSearch：离线时 vendor 实际请求带 ?v= 指纹，预缓存里是不带指纹的裸路径；
+    // 不吞掉查询串就永远匹配不上，冷离线直接白屏。指纹内容不一致的风险可接受（离线本来就拿不到新版）。
+    const cached = await cache.match(request, { ignoreSearch: true });
     if (cached) return cached;
     // 导航请求最终兜底：预缓存的 index.html（ignoreSearch 吞掉 ?source=pwa 等查询）
     const pre = await caches.open(PRECACHE);
