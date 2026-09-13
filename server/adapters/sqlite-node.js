@@ -174,4 +174,18 @@ export class SqliteStore {
       settings: st ? JSON.parse(st.json) : null
     };
   }
+
+  // ---------- App 级键值 ----------
+  // 查无返回 null（node:sqlite 的 .get() 查无是 undefined，统一掰成 null）。
+  async getSetting(key) {
+    const r = this.db.prepare('SELECT value FROM app_settings WHERE key = ?').get(key);
+    return r ? r.value : null;
+  }
+
+  async setSetting(key, value) {
+    this.db.prepare(`
+      INSERT INTO app_settings (key, value, updated_at) VALUES (?,?,?)
+      ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at
+    `).run(key, value, new Date().toISOString());
+  }
 }

@@ -6,6 +6,9 @@ import {
   hashPassword, verifyPassword, newToken, hashToken, bearerFrom, SESSION_TTL_MS
 } from './auth.js';
 import {
+  readMcpConfig, saveMcpToken, setMcpEnabled, newMcpToken, maskToken
+} from './mcp.js';
+import {
   BadRequest, normalizeRecord, normalizeAdjust, normalizeSettings,
   recordRowToClient, adjustRowToClient, DAY_RE, MONTH_RE
 } from './store.js';
@@ -232,6 +235,38 @@ export async function handleApi(request, store, opts = {}) {
         records: recs,
         monthAdjust: adj
       }, 200, { 'content-disposition': 'attachment; filename="work-hours-backup.json"' });
+    }
+
+    // ---------- MCP 接入管理（登录态即可操作；单人系统无特权分级） ----------
+    // 开关与令牌存 DB，改动即时生效；令牌明文只在 POST /api/mcp/token 的响应里出现一次。
+    if (path.startsWith('/api/mcp/')) {
+      await requireAuth(store, request);
+      const sub = path.slice('/api/mcp/'.length);
+
+      if (sub === 'status' && method === 'GET') {
+        const cfg = await readMcpConfig(store, opts.mcpSeedToken);
+        return json({
+          ok: true, configured: cfg.configured, enabled: cfg.enabled,
+          masked: cfg.configured ? maskToken(cfg.token) : null
+        });
+      }
+      if (sub === 'token' && method === 'POST') {
+        const token = newMcpToken();
+        await saveMcpToken(store, token);
+        return json({ ok: true, token, enabled: true, note: '明文仅此一次展示，请立即保存' });
+      }
+      if (sub === 'token' && method === 'GET') {
+        const cfg = await readMcpConfig(store, opts.mcpSeedToken);
+        if (!cfg.configured) return err('尚未配置 MCP 令牌，请先生成', 404);
+        return json({ ok: true, token: cfg.token });
+      }
+      if (sub === 'enabled' && method === 'POST') {
+        const body = await readJson(request);
+        if (typeof body.enabled !== 'boolean') return err('enabled 必须是布尔值');
+        await setMcpEnabled(store, body.enabled);
+        return json({ ok: true, enabled: body.enabled });
+      }
+      return err('接口不存在: ' + path, 404);
     }
 
     return err('接口不存在: ' + path, 404);

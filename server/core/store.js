@@ -25,6 +25,10 @@
 //   // 全量导出，用于备份与首次同步
 //   fullDump(userId): Promise<{ rev, records, adjust, settings }>
 //
+//   // ---- App 级键值 ----（运行时配置，如 MCP 开关/令牌；不属于任何用户，不参与同步）
+//   getSetting(key): Promise<string|null>
+//   setSetting(key, value): Promise<void>
+//
 // UserRow: { id, username, pw_hash, pw_salt, pw_iter, rev, created_at }
 
 export const HOUR_MIN = 6;

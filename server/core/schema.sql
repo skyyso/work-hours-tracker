@@ -65,3 +65,21 @@ CREATE TABLE IF NOT EXISTS settings (
   rev        INTEGER NOT NULL,
   updated_at TEXT    NOT NULL
 );
+
+-- App 级键值：服务自身的运行时配置（当前用于 MCP 接入开关与令牌）。
+-- 刻意与 users/settings 分开：它不属于任何用户，不参与同步协议，
+-- 客户端 push 碰不到它，增量拉取也不会把它带出去。
+CREATE TABLE IF NOT EXISTS app_settings (
+  key        TEXT    PRIMARY KEY,
+  value      TEXT    NOT NULL,
+  updated_at TEXT    NOT NULL
+);
+
+-- App 级键值：服务自身的运行时配置（当前用于 MCP 接入开关与令牌）。
+-- 刻意与 users/settings 分开：它不属于任何用户，不参与同步协议，
+-- 客户端 push 碰不到它，增量拉取也不会把它带出去。
+CREATE TABLE IF NOT EXISTS app_settings (
+  key        TEXT    PRIMARY KEY,
+  value      TEXT    NOT NULL,
+  updated_at TEXT    NOT NULL
+ );

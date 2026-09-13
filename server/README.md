@@ -14,15 +14,16 @@ work-hours-tracker/
     ├── core/               ← 平台无关，VPS 与 CF Workers 共用
     │   ├── api.js          HTTP 接口逻辑（收发标准 Request/Response）
     │   ├── auth.js         PBKDF2 密码 + SHA-256 令牌（纯 Web Crypto）
+    │   ├── mcp.js          只读 MCP 端点（JSON-RPC 2.0）+ 配置管理
     │   ├── store.js        存储契约 + 输入校验
     │   └── schema.sql      建表语句（SQLite / D1 通用）
     ├── adapters/
     │   ├── sqlite-node.js  VPS：node:sqlite（Node 22 内置，零 npm 依赖）
     │   └── d1.js           Cloudflare D1
-    ├── node-server.js      VPS 入口：静态页 + /api/* 同一端口
+    ├── node-server.js      VPS 入口：静态页 + /api/* + /mcp 同一端口
     ├── worker.js           CF Workers 入口
     ├── wrangler.toml       CF 部署配置
-    └── test/api.test.js    服务端用例（72 项）
+    └── test/               api.test.js（72 项）+ mcp.test.js（39 项）
 ```
 
 换平台只需换适配器，`core/` 一行都不用动。
@@ -43,6 +44,7 @@ npm start                    # 默认 9523，静态页与 API 同源
 | `DB_PATH` | `server/data/work-hours.db` | SQLite 文件位置 |
 | `STATIC_DIR` | 项目根 | 静态目录 |
 | `ALLOW_REGISTER` | 未设 | 设 `1` 才开放注册 |
+| `MCP_AUTH_TOKEN` | 未设 | MCP 端点接入令牌，**仅首次种子**：库里已有令牌后以 DB 为准（页面后台可改），可不设 |
 
 首次访问 `http://<地址>:9523` → 设置页 → 云端同步 → 创建首个账号。
 **建首个账号后注册自动关闭**，公网暴露也不会被陌生人开号。
@@ -50,9 +52,21 @@ npm start                    # 默认 9523，静态页与 API 同源
 跑测试：
 
 ```bash
-cd server && npm test        # 72 项
+cd server && npm test        # 72 项 API + 39 项 MCP
 cd .. && node verify_payroll.js   # 220 项
 ```
+
+## MCP Server（POST /mcp）
+
+服务端内置只读 MCP 端点（Streamable HTTP，JSON-RPC 2.0），让对话式 AI 查询出勤与薪酬。
+工具 7 个：`get_month_summary` / `get_shift_records` / `get_payroll_settings` / `get_penalty_details` / `simulate_leave` / `list_month_overview` / `get_business_rules`。
+算钱一律复用 `shared/payroll.js` 引擎（与前端看板同源），不让 AI 口算。
+
+- **配置存 DB**（`app_settings` 表），页面「设置 → AI 接入 (MCP)」可开关/生成/重置令牌，**即时生效无需重启**
+- `MCP_AUTH_TOKEN` 环境变量只做首启种子（库里从没有过令牌时迁入 DB），不设也行
+- 状态语义：未配置 → `404`（端点视为不存在）；已配置但关闭 → `503`；令牌错误 → `401`
+- 管理 API（登录态）：`GET /api/mcp/status`（掩码）、`POST /api/mcp/token`（生成/重置，明文仅回一次）、`GET /api/mcp/token`（复制用取回明文）、`POST /api/mcp/enabled`
+- 只读约束：任何工具都不写库，AI 最多能看，不能改
 
 ### systemd
 
@@ -108,6 +122,10 @@ PBKDF2 十万次迭代实测约 17ms，远低于 Workers 的 CPU 时间预算。
 | DELETE | `/api/record/YYYY-MM-DD` | 删单日 |
 | DELETE | `/api/adjust/YYYY-MM` | 删单月奖惩 |
 | GET | `/api/export` | 导出 JSON，与前端「导出备份」同构，可互相导入 |
+| GET | `/api/mcp/status` | MCP 接入状态（configured/enabled/令牌掩码） |
+| POST | `/api/mcp/token` | 生成/重置 MCP 令牌（明文仅此一次，自动启用） |
+| GET | `/api/mcp/token` | 取回 MCP 令牌明文（复制用） |
+| POST | `/api/mcp/enabled` | 开/关 MCP 端点（即时生效，无需重启） |
 
 ## 同步机制
 
@@ -138,6 +156,7 @@ PBKDF2 十万次迭代实测约 17ms，远低于 Workers 的 CPU 时间预算。
 | `records` | (user_id, day) | day = `2026-09-08` |
 | `month_adjust` | (user_id, month) | month = `2026-09`，`status` = draft/final |
 | `settings` | user_id | 整份 JSON，字段会迭代所以不拆列 |
+| `app_settings` | key | App 级运行时配置（MCP 开关/令牌），不属于任何用户，不参与同步 |
 
 ## 安全
 

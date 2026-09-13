@@ -9,6 +9,7 @@
 //   DB_PATH     SQLite 文件（默认 <server>/data/work-hours.db）
 //   STATIC_DIR  静态目录（默认项目根，即 index.html 所在处）
 //   ALLOW_REGISTER=1  开放注册（默认只允许「库里还没有用户」时注册首个账号）
+//   MCP_AUTH_TOKEN  MCP 端点（POST /mcp）访问令牌。只做首次种子：库里已有令牌后以 DB 为准（后台可改）
 //   ACCESS_LOG  访问日志文件（默认 <server>/data/access.log；设 off 关闭）
 
 import { createServer } from 'node:http';
@@ -21,6 +22,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve, normalize, extname } from 'node:path';
 import { SqliteStore } from './adapters/sqlite-node.js';
 import { handleApi } from './core/api.js';
+import { handleMcp } from './core/mcp.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -29,6 +31,7 @@ const HOST = process.env.HOST || '0.0.0.0';
 const DB_PATH = process.env.DB_PATH || join(__dirname, 'data', 'work-hours.db');
 const STATIC_DIR = resolve(process.env.STATIC_DIR || join(__dirname, '..'));
 const ALLOW_REGISTER = process.env.ALLOW_REGISTER === '1';
+const MCP_SEED_TOKEN = process.env.MCP_AUTH_TOKEN || '';
 const ACCESS_LOG = process.env.ACCESS_LOG === 'off'
   ? null
   : resolve(process.env.ACCESS_LOG || join(__dirname, 'data', 'access.log'));
@@ -350,8 +353,14 @@ const server = createServer(async (req, res) => {
   res.on('close', () => writeAccess(req, res, startedAt, sock, baseline));
   try {
     const u = new URL(req.url, 'http://x');
+    if (u.pathname === '/mcp' || u.pathname.startsWith('/mcp/')) {
+      const response = await handleMcp(await toRequest(req), store, { seedToken: MCP_SEED_TOKEN });
+      return await sendResponse(res, response);
+    }
     if (u.pathname.startsWith('/api/')) {
-      const response = await handleApi(await toRequest(req), store, { allowRegister: ALLOW_REGISTER });
+      const response = await handleApi(await toRequest(req), store, {
+        allowRegister: ALLOW_REGISTER, mcpSeedToken: MCP_SEED_TOKEN
+      });
       return await sendResponse(res, response);
     }
     if (req.method !== 'GET' && req.method !== 'HEAD') {

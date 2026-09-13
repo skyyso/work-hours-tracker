@@ -7,7 +7,7 @@
   "main": "node-server.js",
   "scripts": {
     "start": "node --disable-warning=ExperimentalWarning node-server.js",
-    "test": "node --disable-warning=ExperimentalWarning test/api.test.js",
+    "test": "node --disable-warning=ExperimentalWarning test/api.test.js && node --disable-warning=ExperimentalWarning test/mcp.test.js",
     "schema:dump": "node scripts/dump-schema.js",
     "cf:dev": "wrangler dev",
     "cf:deploy": "wrangler deploy",

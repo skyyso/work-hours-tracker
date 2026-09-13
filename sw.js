@@ -8,14 +8,14 @@
  *      离线时用预缓存的骨架（本地记账照常，数据在 localStorage，与 SW 无关）。
  *   3. 静态资源 network-first：在线优先最新（no-cache 本来就要求「用前先问」），
  *      网络失败才回缓存 —— SW 不改变现有缓存策略，只补「彻底断网」这一层。
- *   4. /api/* 与 /mcp/sse 一律不碰：同步引擎自己有超时与 offline 处理，
+ *   4. /api/* 与 /mcp* 一律不碰：同步引擎自己有超时与 offline 处理，
  *      SW 绝不缓存 API 响应，避免「读到旧数据以为同步成功」的假象。
  *
  * 版本升级：静态资源 no-cache+ETag，导航每次都回源，新 index.html 引用的
  * vendor ?v= 指纹变化会触发重下，PRECACHE 键值同步更新即可。旧缓存条目
  * activate 时统一清理，不做遗留兜底。
  */
-const VERSION = 'v2';
+const VERSION = 'v3';
 const PRECACHE = `wht-precache-${VERSION}`;
 const RUNTIME = `wht-runtime-${VERSION}`;
 
@@ -84,7 +84,7 @@ self.addEventListener('fetch', (event) => {
   // 只管同源 GET；跨域与 /api/*、/mcp/* 直接放行给网络
   if (url.origin !== self.location.origin) return;
   if (event.request.method !== 'GET') return;
-  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/mcp/')) return;
+  if (url.pathname.startsWith('/api/') || url.pathname === '/mcp' || url.pathname.startsWith('/mcp/')) return;
 
   if (event.request.mode === 'navigate') {
     event.respondWith(networkFirst(event.request, RUNTIME));

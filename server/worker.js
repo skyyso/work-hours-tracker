@@ -10,21 +10,26 @@
 // 所以这里只处理 /api/*，其余交回 env.ASSETS。
 
 import { handleApi } from './core/api.js';
+import { handleMcp } from './core/mcp.js';
 import { D1Store } from './adapters/d1.js';
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    if (url.pathname.startsWith('/api/')) {
+    if (url.pathname.startsWith('/api/') || url.pathname === '/mcp' || url.pathname.startsWith('/mcp/')) {
       if (!env.DB) {
         return new Response(
           JSON.stringify({ ok: false, error: 'D1 未绑定：请在 wrangler.toml 配置 [[d1_databases]] binding = "DB"' }),
           { status: 500, headers: { 'content-type': 'application/json; charset=utf-8' } }
         );
       }
+      if (url.pathname === '/mcp' || url.pathname.startsWith('/mcp/')) {
+        return handleMcp(request, new D1Store(env.DB), { seedToken: env.MCP_AUTH_TOKEN || '' });
+      }
       return handleApi(request, new D1Store(env.DB), {
-        allowRegister: env.ALLOW_REGISTER === '1'
+        allowRegister: env.ALLOW_REGISTER === '1',
+        mcpSeedToken: env.MCP_AUTH_TOKEN || ''
       });
     }
 

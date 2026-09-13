@@ -143,4 +143,17 @@ export class D1Store {
     for (const a of (adjs.results || [])) adjust[a.month] = a;
     return { rev: await this.getRev(userId), records, adjust, settings: st ? JSON.parse(st.json) : null };
   }
+
+  // ---------- App 级键值 ----------
+  async getSetting(key) {
+    const r = await this.db.prepare('SELECT value FROM app_settings WHERE key = ?').bind(key).first();
+    return r ? r.value : null;
+  }
+
+  async setSetting(key, value) {
+    await this.db.prepare(`
+      INSERT INTO app_settings (key, value, updated_at) VALUES (?,?,?)
+      ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at
+    `).bind(key, value, new Date().toISOString()).run();
+  }
 }
