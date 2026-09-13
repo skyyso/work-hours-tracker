@@ -4,6 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>工时薪酬助手</title>
+  <meta name="theme-color" content="#312E81" />
+  <!-- PWA 可安装三件套：manifest / iOS 专属图标 / SW 注册（见 setup 末尾 boot 钩子）。
+       只在 HTTPS（或 localhost）安全上下文生效，HTTP 裸访问自动降级为普通网页，不影响现有行为。 -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="工时薪酬" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234F46E5'/%3E%3Cpath d='M16 8v8l5 3' stroke='white' stroke-width='2.5' stroke-linecap='round' fill='none'/%3E%3C/svg%3E" />
   <!-- 本地依赖，不走 CDN：
        原来用 cdn.tailwindcss.com 是运行时 JIT 编译器，它必须先把页面扫一遍再注入样式，
@@ -1952,6 +1961,18 @@ createApp({
         sync.apiBase = window.WHTSync.getApiBase() === location.origin ? '' : window.WHTSync.getApiBase();
         // 探一下服务端在不在、有没有账号，决定设置页该显示「创建账号」还是「登录」
         window.WHTSync.health().catch(() => {});
+      }
+    });
+
+    // PWA：注册 Service Worker。放在 onMounted 里跑：
+    //   1) 不阻塞首次启动；2) 与启动守卫天然隔离 —— SW 注册失败绝不影响页面本身；
+    //   3) verify_payroll.js / app-harness 的 document 桩件没有 serviceWorker 字段，onMounted 里可安全跳过。
+    // HTTPS 才有 navigator.serviceWorker，HTTP 裸访问自动跳过，页面退化为普通网页。
+    onMounted(() => {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').catch((e) => {
+          console.warn('[pwa] SW 注册失败（不影响使用）：', e && e.message);
+        });
       }
     });
 
