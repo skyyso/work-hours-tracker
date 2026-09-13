@@ -14,8 +14,8 @@ work-hours-tracker/
     ├── core/               ← 平台无关，VPS 与 CF Workers 共用
     │   ├── api.js          HTTP 接口逻辑（收发标准 Request/Response）
     │   ├── auth.js         PBKDF2 密码 + SHA-256 令牌（纯 Web Crypto）
-    │   ├── mcp.js          只读 MCP 端点（JSON-RPC 2.0）+ 配置管理
-    │   ├── store.js        存储契约 + 输入校验
+    │   ├── mcp.js          只读 MCP 端点（JSON-RPC 2.0）+ DB 真开关 + 令牌管理
+    │   ├── store.js        存储契约 + 输入校验（含 app_settings 读写）
     │   └── schema.sql      建表语句（SQLite / D1 通用）
     ├── adapters/
     │   ├── sqlite-node.js  VPS：node:sqlite（Node 22 内置，零 npm 依赖）

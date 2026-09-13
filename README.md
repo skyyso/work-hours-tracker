@@ -59,6 +59,9 @@
 - `sync.js`：本地优先增量同步适配层。
 - `server/`：轻量级 REST API 服务端（支持鉴权、版本同步、健康检查 `/api/health`），
   并内置只读 MCP 端点（`POST /mcp`）：AI 客户端可查询出勤与薪酬，配置在页面「设置 → AI 接入 (MCP)」管理，开关/令牌即时生效。
+- `.build/`：Tailwind CSS 预编译工作区（只在开发机跑，产物是 `vendor/tailwind.css`，运行时不需要它）。
+  **改 `index.html` 里出现的新 Tailwind class 后必须重跑**：`cd .build && npx tailwindcss -i input.css -o ../vendor/tailwind.css --minify`，
+  否则新样式不在预编译产物里，页面静默丢样式（2026-09-13 MCP 开关按钮不可见即此因）。
 - `test/` & `tools/`：基线测试（Parity Test）、断言验证与回归测试工具。
 
 ---
@@ -153,3 +156,24 @@ curl -s http://127.0.0.1:9522/api/health
   npm run baseline        # 校验基线无漂移
   npm run baseline:write  # 确认规则变更并更新快照
   ```
+- **改了前端样式后重编译 CSS**（index.html 新增 Tailwind class 时）：
+  ```bash
+  cd .build && npx tailwindcss -i input.css -o ../vendor/tailwind.css --minify
+  ```
+  产物立即生效（服务端逐请求读文件 + no-cache + ETag），无需重启。
+
+---
+
+## 五、 AI 接入 (MCP)
+
+服务端内置只读 MCP 端点（Streamable HTTP，`POST /mcp`，JSON-RPC 2.0），让对话式 AI 查询出勤与薪酬。
+算钱一律复用 `shared/payroll.js` 引擎（与前端看板同源），不让 AI 口算。
+
+- **工具 7 个**（全部只读，不写库）：`get_month_summary` / `get_shift_records` / `get_payroll_settings` /
+  `get_penalty_details` / `simulate_leave` / `list_month_overview` / `get_business_rules`
+- **配置存 DB**（`app_settings` 表），页面「设置 → AI 接入 (MCP)」可开关/生成/重置令牌，**即时生效无需重启**
+- `MCP_AUTH_TOKEN` 环境变量只做首启种子（库里从没有过令牌时迁入 DB），不设也行
+- 状态语义：未配置 → `404`（端点视为不存在）；已配置但关闭 → `503`；令牌错误 → `401`
+- 管理 API（登录态）：`GET /api/mcp/status`（掩码）、`POST /api/mcp/token`（生成/重置，明文仅回一次）、
+  `GET /api/mcp/token`（复制用取回明文）、`POST /api/mcp/enabled`
+- 测试：`cd server && node --disable-warning=ExperimentalWarning test/mcp.test.js`（39 项）
