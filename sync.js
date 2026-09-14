@@ -87,10 +87,18 @@
     emit();
   }
 
+  const DEFAULT_REMOTE_BASE = 'https://daka.kory.kdns.fr';
+
   function apiBase() {
     const saved = readLS(LS.base, '');
     if (saved) return String(saved).replace(/\/+$/, '');
-    return location.origin;   // 默认同源：VPS 与 CF Workers 都是页面与 API 同一个域
+    // 运行在 Android 本地 assets (file://) 或非 http(s) 环境时，回退到默认预设服务器
+    if (typeof location !== 'undefined' && location.origin && /^https?:\/\//.test(location.origin)) {
+      // 如果是在本机开发测试(127.0.0.1/localhost)或部署的域名，默认同源；
+      // 如果没有指定 saved，则仍可回退到默认远程服务器（如果 origin 不是服务域名）
+      return location.origin;
+    }
+    return DEFAULT_REMOTE_BASE;
   }
 
   async function api(path, { method = 'GET', body, auth = true, timeoutMs = 15000 } = {}) {

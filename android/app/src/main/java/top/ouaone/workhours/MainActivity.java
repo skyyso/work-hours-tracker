@@ -117,7 +117,7 @@ public class MainActivity extends AppCompatActivity {
                     finish();
                 } else {
                     lastBackPressTime = now;
-                    Toast.makeText(MainActivity.this, "再按一次退出工时记账", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "再按一次退出工时打卡", Toast.LENGTH_SHORT).show();
                 }
             }
         });

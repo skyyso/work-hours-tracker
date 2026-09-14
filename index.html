@@ -258,8 +258,8 @@
   <!-- ===== 顶部资产看板 ===== -->
   <header class="text-white px-5 pt-5 pb-5 rounded-b-3xl board-shadow shrink-0 relative overflow-hidden"
     style="background-image: radial-gradient(125% 125% at 85% -10%, #6366F1 0%, rgba(99,102,241,0) 58%), linear-gradient(135deg, #1E293B 0%, #312E81 56%, #4F46E5 100%);">
-    <!-- 月份切换（日历/汇总） -->
-    <div class="flex justify-between items-center">
+    <!-- 月份切换（日历/汇总） / 设置页标题 -->
+    <div v-if="tab !== 'settings'" class="flex justify-between items-center">
       <div class="flex items-center space-x-1">
         <button @click="changeMonth(-1)" class="w-7 h-7 rounded-full hover:bg-white/20 active:scale-90 transition flex items-center justify-center"><svg class="ico text-base"><use href="#i-chevron-left" /></svg></button>
         <span class="text-base font-bold tracking-wide font-mono-num">{{ currentYear }}年{{ currentMonth + 1 }}月</span>
@@ -267,8 +267,11 @@
       </div>
       <div class="flex items-center space-x-1">
         <button v-if="!isCurrentMonth" @click="goToday" class="pill active:scale-95 transition">回今天</button>
-        <button @click="openSettings" class="w-7 h-7 rounded-full hover:bg-white/20 active:scale-90 transition flex items-center justify-center" title="设置"><svg class="ico text-base"><use href="#i-settings" /></svg></button>
+        <button @click="openSettings" class="w-7 h-7 rounded-full hover:bg-white/20 active:scale-90 transition flex items-center justify-center" title="快速设置抽屉"><svg class="ico text-base"><use href="#i-settings" /></svg></button>
       </div>
+    </div>
+    <div v-else class="flex items-center h-7">
+      <span class="text-base font-bold tracking-wide flex items-center gap-1.5"><svg class="ico text-[17px]"><use href="#i-settings" /></svg>系统设置</span>
     </div>
 
     <!-- 主数字：本月「挣得」（仅日历页）。¥ 与小数位缩小，整数部放大，形成阶梯感。
@@ -657,6 +660,209 @@
       </button>
     </section>
 
+    <!-- ========== ③ 设置 ========== -->
+    <section v-show="tab === 'settings'" class="px-4 pt-5 pb-4 space-y-3.5">
+
+      <div class="card overflow-hidden">
+        <p class="px-5 py-3 text-xs font-bold text-slate-700 bg-slate-50 border-b border-slate-100 flex items-center gap-1.5"><svg class="ico text-[15px] text-indigo-600"><use href="#i-coins" /></svg>薪酬规则</p>
+        <div class="divide-y divide-slate-100">
+          <label class="flex items-center justify-between px-5 py-3">
+            <span class="text-xs text-slate-600">基础时薪（元/h）</span>
+            <input type="number" step="0.5" min="0" v-model.number="settings.rate" class="w-24 text-right text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-indigo-500" />
+          </label>
+          <label class="flex items-center justify-between px-5 py-3">
+            <span class="text-xs text-slate-600">满勤天数（天）</span>
+            <input type="number" step="1" min="1" max="31" v-model.number="settings.fullDays" class="w-24 text-right text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-indigo-500" />
+          </label>
+          <label class="flex items-center justify-between px-5 py-3">
+            <span class="text-xs text-slate-600">满勤奖（元/工时）</span>
+            <input type="number" step="0.5" min="0" v-model.number="settings.fullBonusPerHour" class="w-24 text-right text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-indigo-500" />
+          </label>
+        </div>
+        <p class="px-5 py-3 text-[10px] text-slate-400 bg-slate-50/70 leading-relaxed">满勤奖按「当月总工时 × 单价」计算，属于奖励，不并入当月工资。</p>
+      </div>
+
+      <div class="card overflow-hidden">
+        <p class="px-5 py-3 text-xs font-bold text-slate-700 bg-slate-50 border-b border-slate-100 flex items-center gap-1.5"><svg class="ico text-[15px] text-indigo-600"><use href="#i-shield-alert" /></svg>奖惩标准</p>
+        <div class="divide-y divide-slate-100">
+          <label class="flex items-center justify-between px-5 py-3">
+            <span class="text-xs text-slate-600">查获违禁品（元/件）</span>
+            <input type="number" step="1" min="0" v-model.number="settings.foundBonus" class="w-24 text-right text-xs font-bold text-emerald-700 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-indigo-500" />
+          </label>
+          <label class="flex items-center justify-between px-5 py-3">
+            <span class="text-xs text-slate-600">漏查违禁品（元/件）</span>
+            <input type="number" step="1" min="0" v-model.number="settings.missedPenalty" class="w-24 text-right text-xs font-bold text-rose-600 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-indigo-500" />
+          </label>
+        </div>
+      </div>
+
+      <div class="card overflow-hidden">
+        <p class="px-5 py-3 text-xs font-bold text-slate-700 bg-slate-50 border-b border-slate-100 flex items-center gap-1.5"><svg class="ico text-[15px] text-indigo-600"><use href="#i-calendar-clock" /></svg>发放周期</p>
+        <div class="divide-y divide-slate-100">
+          <label class="flex items-center justify-between px-5 py-3">
+            <span class="text-xs text-slate-600">上半月截止日</span>
+            <input type="number" step="1" min="1" max="28" v-model.number="settings.cutoff" class="w-24 text-right text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-indigo-500" />
+          </label>
+          <label class="flex items-center justify-between px-5 py-3">
+            <span class="text-xs text-slate-600">上半月发放日（当月）</span>
+            <input type="number" step="1" min="1" max="31" v-model.number="settings.payDayA" class="w-24 text-right text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-indigo-500" />
+          </label>
+          <label class="flex items-center justify-between px-5 py-3">
+            <span class="text-xs text-slate-600">下半月发放日（次月）</span>
+            <input type="number" step="1" min="1" max="31" v-model.number="settings.payDayB" class="w-24 text-right text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-indigo-500" />
+          </label>
+        </div>
+        <p class="px-5 py-3 text-[10px] text-slate-400 bg-slate-50/70 leading-relaxed">
+          1–{{ settings.cutoff }}日工时 → 当月{{ settings.payDayA }}号发；{{ settings.cutoff + 1 }}日–月底工时 + 当月奖惩 → 次月{{ settings.payDayB }}号一起发。
+        </p>
+      </div>
+
+      <div class="card overflow-hidden">
+        <p class="px-5 py-3 text-xs font-bold text-slate-700 bg-slate-50 border-b border-slate-100 flex items-center gap-1.5"><svg class="ico text-[15px] text-indigo-600"><use href="#i-hourglass" /></svg>班次默认工时</p>
+        <div class="divide-y divide-slate-100">
+          <div class="px-5 py-3 flex items-center justify-between">
+            <span class="text-xs text-slate-600 flex items-center gap-1.5"><svg class="ico text-[14px] text-indigo-500"><use href="#i-clock" /></svg>打卡默认班次</span>
+            <div class="flex rounded-xl overflow-hidden border border-slate-200">
+              <button @click="settings.defaultShift = 'day'"
+                class="px-3 py-1.5 text-[11px] font-bold transition flex items-center gap-1"
+                :class="cfg.defaultShift === 'day' ? 'bg-sky-600 text-white' : 'bg-white text-slate-500'">
+                <svg class="ico text-[13px]"><use href="#i-sun" /></svg>白班
+              </button>
+              <button @click="settings.defaultShift = 'night'"
+                class="px-3 py-1.5 text-[11px] font-bold transition flex items-center gap-1"
+                :class="cfg.defaultShift === 'night' ? 'bg-violet-600 text-white' : 'bg-white text-slate-500'">
+                <svg class="ico text-[13px]"><use href="#i-moon" /></svg>夜班
+              </button>
+            </div>
+          </div>
+          <label class="flex items-center justify-between px-5 py-3">
+            <span class="text-xs text-slate-600 flex items-center gap-1.5"><svg class="ico text-[14px] text-amber-500"><use href="#i-sun" /></svg>白班默认（h）</span>
+            <input type="number" step="0.5" min="0" max="24" v-model.number="settings.dayHours" class="w-24 text-right text-xs font-bold text-sky-700 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-indigo-500 font-mono-num" />
+          </label>
+          <label class="flex items-center justify-between px-5 py-3">
+            <span class="text-xs text-slate-600 flex items-center gap-1.5"><svg class="ico text-[14px] text-violet-500"><use href="#i-moon" /></svg>夜班默认（h）</span>
+            <input type="number" step="0.5" min="0" max="24" v-model.number="settings.nightHours" class="w-24 text-right text-xs font-bold text-violet-700 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-indigo-500 font-mono-num" />
+          </label>
+        </div>
+        <p class="px-5 py-3 text-[10px] text-slate-400 bg-slate-50/70">夜班跨天，工时全部归入开始打卡的那一天。</p>
+      </div>
+
+      <!-- 云端同步：未登录时也完全可用，登录只是多一层服务器备份 -->
+      <div class="card overflow-hidden">
+        <div class="px-5 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between gap-2">
+          <p class="text-xs font-bold text-slate-700 flex items-center gap-1.5"><svg class="ico text-[15px] text-indigo-600"><use href="#i-cloud" /></svg>云端同步</p>
+          <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full" :class="syncStatusClass">{{ syncStatusText }}</span>
+        </div>
+
+        <!-- 已登录 -->
+        <div v-if="sync.user" class="divide-y divide-slate-100">
+          <div class="flex items-center justify-between px-5 py-3">
+            <span class="text-xs text-slate-600">当前账号</span>
+            <span class="text-xs font-bold text-slate-800">{{ sync.user.username }}</span>
+          </div>
+          <div v-if="syncTimeText" class="flex items-center justify-between px-5 py-3">
+            <span class="text-xs text-slate-600">最后同步</span>
+            <span class="text-xs font-bold text-slate-800 font-mono-num">{{ syncTimeText }}</span>
+          </div>
+          <div v-if="sync.lastError" class="px-5 py-2.5 bg-rose-50">
+            <p class="text-[10px] text-rose-700 leading-relaxed">{{ sync.lastError }}</p>
+          </div>
+          <button @click="doSyncNow" :disabled="sync.busy" class="w-full flex items-center gap-2 px-5 py-3.5 text-xs font-medium text-indigo-600 active:bg-slate-50 transition disabled:opacity-40"><svg class="ico text-[15px]"><use href="#i-refresh-cw" /></svg>立即同步{{ sync.pending > 0 ? '（待上传 ' + sync.pending + ' 项）' : '' }}</button>
+          <button @click="reopenMerge" :disabled="sync.busy" class="w-full flex items-center gap-2 px-5 py-3.5 text-xs font-medium text-slate-500 active:bg-slate-50 transition disabled:opacity-40"><svg class="ico text-[15px]"><use href="#i-shield-alert" /></svg>比对本机与服务器（有冲突时可选）</button>
+          <button @click="doPushAll" :disabled="sync.busy" class="w-full flex items-center gap-2 px-5 py-3.5 text-xs font-medium text-slate-500 active:bg-slate-50 transition disabled:opacity-40"><svg class="ico text-[15px]"><use href="#i-upload" /></svg>把本机全部数据上传</button>
+          <button @click="doPullAll" :disabled="sync.busy" class="w-full flex items-center gap-2 px-5 py-3.5 text-xs font-medium text-slate-500 active:bg-slate-50 transition disabled:opacity-40"><svg class="ico text-[15px]"><use href="#i-download" /></svg>用服务器数据覆盖本机</button>
+          <button @click="doLogout" :disabled="sync.busy" class="w-full flex items-center gap-2 px-5 py-3.5 text-xs font-medium text-rose-600 active:bg-rose-50 transition disabled:opacity-40"><svg class="ico text-[15px]"><use href="#i-log-out" /></svg>退出登录（保留本地数据）</button>
+        </div>
+
+        <!-- 未登录：明确区分登录与注册标签，无需等待探测延时即可直接注册 -->
+        <div v-else class="divide-y divide-slate-100">
+          <div class="px-5 pt-3 pb-1">
+            <div class="flex rounded-xl bg-slate-100 p-1">
+              <button @click="authMode = 'login'" class="flex-1 py-1.5 text-xs font-bold rounded-lg transition"
+                :class="authMode === 'login' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'">账号登录</button>
+              <button @click="authMode = 'register'" class="flex-1 py-1.5 text-xs font-bold rounded-lg transition"
+                :class="authMode === 'register' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'">注册新账号</button>
+            </div>
+          </div>
+          <div class="px-5 py-3 space-y-2">
+            <input v-model="loginForm.username" type="text" autocomplete="username" placeholder="用户名（3–32 位字母数字）"
+              class="w-full text-xs text-slate-700 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-indigo-500" />
+            <input v-model="loginForm.password" type="password" autocomplete="current-password"
+              :placeholder="authMode === 'register' ? '设置密码（至少 8 位）' : '输入密码（至少 8 位）'"
+              @keyup.enter="authMode === 'register' ? doRegister() : doLogin()"
+              class="w-full text-xs text-slate-700 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-indigo-500" />
+            <div class="pt-0.5">
+              <button v-if="authMode === 'login'" @click="doLogin" :disabled="sync.busy" class="w-full py-2.5 rounded-xl text-xs font-bold bg-indigo-600 text-white active:scale-95 transition disabled:opacity-40">立即登录</button>
+              <button v-else @click="doRegister" :disabled="sync.busy" class="w-full py-2.5 rounded-xl text-xs font-bold bg-emerald-600 text-white active:scale-95 transition disabled:opacity-40">{{ sync.serverUsers === 0 ? '创建首个账号（管理员）' : '创建账号并登录' }}</button>
+            </div>
+          </div>
+          <p class="px-5 py-2.5 text-[10px] leading-relaxed bg-slate-50/70"
+            :class="sync.serverUsers === null ? 'text-amber-700' : 'text-slate-400'">
+            <template v-if="sync.serverUsers === null">没探到同步服务（当前只跑静态页）。数据仍存本机，一切功能正常；要多设备共用需先启动 server/。</template>
+            <template v-else-if="sync.serverUsers === 0">服务端还没有账号。创建首个账号后就会自动关闭公开注册，保障数据安全。</template>
+            <template v-else-if="sync.allowRegister">服务端已开放多用户注册，填写用户名密码即可直接创建账号。</template>
+            <template v-else>登录后打卡数据会自动同步到服务器，多设备共用同一份。未登录也能正常记账，只存本机。</template>
+          </p>
+          <label class="flex items-center justify-between gap-2 px-5 py-3">
+            <span class="text-xs text-slate-600 shrink-0">服务器地址</span>
+            <input v-model="sync.apiBase" @change="saveApiBase" type="url" inputmode="url" placeholder="留空 = 同源"
+              class="min-w-0 flex-1 text-right text-[11px] text-slate-700 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-indigo-500" />
+          </label>
+        </div>
+      </div>
+
+      <!-- AI 接入 (MCP)：让对话式 AI 只读查询打卡与薪酬；开关与令牌存服务器 DB，改动即时生效 -->
+      <div class="card overflow-hidden">
+        <div class="px-5 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between gap-2">
+          <p class="text-xs font-bold text-slate-700 flex items-center gap-1.5"><svg class="ico text-[15px] text-indigo-600"><use href="#i-lightbulb" /></svg>AI 接入 (MCP)</p>
+          <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full" :class="mcpBadge.cls">{{ mcpBadge.text }}</span>
+        </div>
+        <div class="divide-y divide-slate-100">
+          <div class="flex items-center justify-between px-5 py-3">
+            <span class="text-xs text-slate-600">接入开关</span>
+            <button @click="toggleMcp" :disabled="mcp.busy || !mcp.configured" class="relative w-11 h-6 rounded-full transition shrink-0 disabled:opacity-40" :class="mcp.enabled ? 'bg-emerald-500' : 'bg-slate-300'">
+              <span class="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all" :class="mcp.enabled ? 'left-[22px]' : 'left-0.5'"></span>
+            </button>
+          </div>
+          <div v-if="mcp.configured" class="flex items-center justify-between gap-2 px-5 py-3">
+            <span class="text-xs text-slate-600 shrink-0">访问令牌</span>
+            <span class="text-[11px] font-bold text-slate-700 font-mono-num">{{ mcp.masked }}</span>
+          </div>
+          <button v-if="mcp.configured" @click="copyMcpToken" :disabled="mcp.busy" class="w-full flex items-center gap-2 px-5 py-3.5 text-xs font-medium text-indigo-600 active:bg-slate-50 transition disabled:opacity-40"><svg class="ico text-[15px]"><use :href="mcpCopied ? '#i-check' : '#i-copy'" /></svg>{{ mcpCopied ? '已复制，去 AI 客户端粘贴' : '复制访问令牌（明文）' }}</button>
+          <button @click="newMcpToken" :disabled="mcp.busy" class="w-full flex items-center gap-2 px-5 py-3.5 text-xs font-medium text-indigo-600 active:bg-slate-50 transition disabled:opacity-40"><svg class="ico text-[15px]" :class="{ 'animate-spin': mcp.busy }"><use href="#i-refresh-cw" /></svg>{{ mcp.configured ? '重置令牌（旧令牌立即失效）' : '生成访问令牌并开启' }}</button>
+        </div>
+        <p class="px-5 py-3 text-[10px] text-slate-400 bg-slate-50/70 leading-relaxed">
+          端点 POST /mcp（Bearer 令牌鉴权），只读：AI 只能查询出勤、工时与薪酬，改不了任何数据。开关与令牌改动即时生效，无需重启；重置后旧客户端立即失效。
+        </p>
+      </div>
+
+      <div class="card overflow-hidden">
+        <p class="px-5 py-3 text-xs font-bold text-slate-700 bg-slate-50 border-b border-slate-100 flex items-center gap-1.5"><svg class="ico text-[15px] text-indigo-600"><use href="#i-database" /></svg>数据</p>
+        <div class="divide-y divide-slate-100">
+          <div class="flex items-center justify-between px-5 py-3">
+            <span class="text-xs text-slate-600">已存打卡记录</span>
+            <span class="text-xs font-bold text-slate-800 font-mono-num">{{ recordCount }} 天</span>
+          </div>
+          <button @click="exportData" class="w-full flex items-center gap-2 px-5 py-3.5 text-xs font-medium text-indigo-600 active:bg-slate-50 transition"><svg class="ico text-[15px]"><use href="#i-download" /></svg>导出备份（JSON 文件）</button>
+          <button @click="copyData" class="w-full flex items-center gap-2 px-5 py-3.5 text-xs font-medium text-indigo-600 active:bg-slate-50 transition"><svg class="ico text-[15px]"><use :href="dataCopied ? '#i-check' : '#i-copy'" /></svg>{{ dataCopied ? '已复制到剪贴板' : '复制数据到剪贴板' }}</button>
+          <label class="flex items-center gap-2 px-5 py-3.5 text-xs font-medium text-indigo-600 active:bg-slate-50 transition cursor-pointer">
+            <svg class="ico text-[15px]"><use href="#i-upload" /></svg>导入备份（同日期覆盖）
+            <input type="file" accept=".json,application/json" @change="importData" class="hidden" />
+          </label>
+          <button @click="resetSettings" class="w-full flex items-center gap-2 px-5 py-3.5 text-xs font-medium text-slate-500 active:bg-slate-50 transition"><svg class="ico text-[15px]"><use href="#i-rotate-ccw" /></svg>恢复默认设置（不动打卡数据）</button>
+          <button @click="clearMonth" class="w-full flex items-center gap-2 px-5 py-3.5 text-xs font-medium text-rose-600 active:bg-rose-50 transition"><svg class="ico text-[15px]"><use href="#i-trash-2" /></svg>清空 {{ currentYear }}年{{ currentMonth + 1 }}月记录</button>
+          <button @click="clearAll" class="w-full flex items-center gap-2 px-5 py-3.5 text-xs font-medium text-rose-600 active:bg-rose-50 transition"><svg class="ico text-[15px]"><use href="#i-triangle-alert" /></svg>清空全部打卡记录</button>
+        </div>
+      </div>
+
+      <p class="text-center text-[10px] text-slate-400 leading-relaxed pt-1 pb-2">
+        <template v-if="sync.user">数据存本机浏览器，并同步到服务器账号 <b class="text-slate-500">{{ sync.user.username }}</b>。<br />换设备登录同一账号即可看到同一份数据。</template>
+        <template v-else>数据仅保存在本机浏览器（localStorage）。<br />清除浏览器数据会丢失，建议登录同步或定期导出备份。</template>
+      </p>
+
+
+    </section>
+
   </main>
 
   <!-- ===== 设置抽屉 ===== -->
@@ -786,23 +992,33 @@
           <button @click="doLogout" :disabled="sync.busy" class="w-full flex items-center gap-2 px-5 py-3.5 text-xs font-medium text-rose-600 active:bg-rose-50 transition disabled:opacity-40"><svg class="ico text-[15px]"><use href="#i-log-out" /></svg>退出登录（保留本地数据）</button>
         </div>
 
-        <!-- 未登录 -->
+        <!-- 未登录：明确区分登录与注册标签，无需等待探测延时即可直接注册 -->
         <div v-else class="divide-y divide-slate-100">
+          <div class="px-5 pt-3 pb-1">
+            <div class="flex rounded-xl bg-slate-100 p-1">
+              <button @click="authMode = 'login'" class="flex-1 py-1.5 text-xs font-bold rounded-lg transition"
+                :class="authMode === 'login' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'">账号登录</button>
+              <button @click="authMode = 'register'" class="flex-1 py-1.5 text-xs font-bold rounded-lg transition"
+                :class="authMode === 'register' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'">注册新账号</button>
+            </div>
+          </div>
           <div class="px-5 py-3 space-y-2">
             <input v-model="loginForm.username" type="text" autocomplete="username" placeholder="用户名（3–32 位字母数字）"
               class="w-full text-xs text-slate-700 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-indigo-500" />
-            <input v-model="loginForm.password" type="password" autocomplete="current-password" placeholder="密码（至少 8 位）" @keyup.enter="doLogin"
+            <input v-model="loginForm.password" type="password" autocomplete="current-password"
+              :placeholder="authMode === 'register' ? '设置密码（至少 8 位）' : '输入密码（至少 8 位）'"
+              @keyup.enter="authMode === 'register' ? doRegister() : doLogin()"
               class="w-full text-xs text-slate-700 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-indigo-500" />
-            <div class="flex gap-2 pt-0.5">
-              <button @click="doLogin" :disabled="sync.busy" class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-indigo-600 text-white active:scale-95 transition disabled:opacity-40">登录</button>
-              <button v-if="sync.allowRegister" @click="doRegister" :disabled="sync.busy" class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 text-white active:scale-95 transition disabled:opacity-40">{{ sync.serverUsers === 0 ? '创建首个账号' : '注册新账号' }}</button>
+            <div class="pt-0.5">
+              <button v-if="authMode === 'login'" @click="doLogin" :disabled="sync.busy" class="w-full py-2.5 rounded-xl text-xs font-bold bg-indigo-600 text-white active:scale-95 transition disabled:opacity-40">立即登录</button>
+              <button v-else @click="doRegister" :disabled="sync.busy" class="w-full py-2.5 rounded-xl text-xs font-bold bg-emerald-600 text-white active:scale-95 transition disabled:opacity-40">{{ sync.serverUsers === 0 ? '创建首个账号（管理员）' : '创建账号并登录' }}</button>
             </div>
           </div>
           <p class="px-5 py-2.5 text-[10px] leading-relaxed bg-slate-50/70"
             :class="sync.serverUsers === null ? 'text-amber-700' : 'text-slate-400'">
             <template v-if="sync.serverUsers === null">没探到同步服务（当前只跑静态页）。数据仍存本机，一切功能正常；要多设备共用需先启动 server/。</template>
-            <template v-else-if="sync.serverUsers === 0">服务端还没有账号。创建首个账号后就会自动关闭注册，不会被陌生人开号。</template>
-            <template v-else-if="sync.allowRegister">服务端已开启多用户注册，填写用户名密码即可直接创建账号。</template>
+            <template v-else-if="sync.serverUsers === 0">服务端还没有账号。创建首个账号后就会自动关闭公开注册，保障数据安全。</template>
+            <template v-else-if="sync.allowRegister">服务端已开放多用户注册，填写用户名密码即可直接创建账号。</template>
             <template v-else>登录后打卡数据会自动同步到服务器，多设备共用同一份。未登录也能正常记账，只存本机。</template>
           </p>
           <label class="flex items-center justify-between gap-2 px-5 py-3">
@@ -870,8 +1086,7 @@
   <!-- ===== 底部 Tab 导航 ===== -->
   <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white/80 border-t border-slate-200/80 flex safe-bottom z-40" style="backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);">
     <button v-for="t in tabs" :key="t.id"
-      :class="t.id === 'settings' ? '' : ''"
-      @click="t.id === 'settings' ? openSettings() : (tab = t.id)"
+      @click="tab = t.id"
       class="flex-1 flex flex-col items-center pt-2 pb-2.5 active:scale-95 transition relative">
       <!-- 选中态指示条：品牌色，贴在顶边 -->
       <span class="absolute top-0 h-[3px] rounded-b-full bg-indigo-600 transition-all duration-300"
@@ -1282,6 +1497,7 @@ createApp({
 
     // ===== 页签 =====
     const tab = ref('calendar');
+    watch(tab, (t) => { if (t === 'settings') loadMcpStatus(); });
     // icon 存 sprite 里的 symbol id，模板用 <use :href="'#' + icon"> 渲染线性图标。
     // 注意：verify_payroll.js 用例20 断言 tabs 长度=3 且 id 顺序为 calendar,summary,settings，勿改这两项。
     const tabs = [
@@ -1733,6 +1949,7 @@ createApp({
       serverUsers: null, allowRegister: null, apiBase: '', busy: false, hold: null
     });
     const syncPanelOpen = ref(false);
+    const authMode = ref('login'); // 'login' | 'register'
     const loginForm = ref({ username: '', password: '' });
 
     // 首次登录合并：本机与服务器同一天内容不同时，让用户选哪份赢
@@ -2126,6 +2343,7 @@ createApp({
       openAdjust, closeAdjust, saveAdjustDraft, finalizeAdjust, unfinalizeAdjust,
       changeMonth, goToday, openDayDrawer, selectShift,
       openSettings, closeSettings,
+      authMode,
       sync, syncPanelOpen, loginForm, syncStatusText, syncStatusClass, syncTimeText,
       mergeOpen, mergeInfo, mergeRows, resolveMerge, deferMerge, reopenMerge,
       doLogin, doRegister, doLogout, doSyncNow, doPullAll, doPushAll, saveApiBase,

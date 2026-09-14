@@ -179,3 +179,26 @@ curl -s http://127.0.0.1:9522/api/health
 - 管理 API（登录态）：`GET /api/mcp/status`（掩码）、`POST /api/mcp/token`（生成/重置，明文仅回一次）、
   `GET /api/mcp/token`（复制用取回明文）、`POST /api/mcp/enabled`
 - 测试：`cd server && node --disable-warning=ExperimentalWarning test/mcp.test.js`（47 项，含多用户隔离验证）
+
+---
+
+## 六、 Android 客户端与移动端打包
+
+系统提供原生 Android 包装壳（WebView 容器，代码位于 `android/`），将 Web 资产打包至本地 `assets/www`，支持彻底离线断网运行与静默更新。
+
+### 1. 原生功能特性
+- **纯本地离线优先 (Local-First)**：以 `file:///android_asset/www/index.html` 启动，无网络时本地打卡与薪酬核算 100% 完整可用。
+- **默认服务探活回退**：内置默认远程同步地址 `https://daka.kory.kdns.fr`，非 HTTP(S) 环境无需手动填写即可直接探活或注册/登录同步。
+- **沉浸式交互与返回拦截**：双击返回键安全退出防误触（提示「再按一次退出工时打卡」），状态栏与导航栏自适应沉浸。
+- **静态资源一键同步**：前端资产修改后，运行 `./android/copy-web-assets.sh` 即可自动同步至 Android 工程 assets 目录。
+
+### 2. 本地与 CI/CD 自动构建 APK
+- **本地编译**：
+  ```bash
+  cd android
+  ./gradlew assembleRelease
+  # 生成产物：android/app/build/outputs/apk/release/app-release-unsigned.apk
+  ```
+- **GitHub Actions 自动化发布**：
+  - 推送带 `v*` 格式的 Git Tag（如 `git tag v1.0.1 && git push github v1.0.1`）时，自动触发 `.github/workflows/build-apk.yml` 工作流。
+  - 构建产物会自动签名并发布到 GitHub Releases，附带安装包与 SHA256 校验和。

@@ -39,3 +39,4 @@ android/app/src/main/assets/www/*
 .DS_Store
 *.tmp
 *.apk
+keystore-secure/

@@ -47,6 +47,7 @@ function load(records, year, month, settings, adjust) {
     navigator: {},
     document: {
       createElement: () => ({ style: {}, select() {}, click() {} }),
+      getElementById: () => null,
       body: { appendChild() {}, removeChild() {} },
       addEventListener() {}
     },
