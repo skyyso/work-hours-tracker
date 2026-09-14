@@ -820,7 +820,7 @@
         <div class="divide-y divide-slate-100">
           <div class="flex items-center justify-between px-5 py-3">
             <span class="text-xs text-slate-600">接入开关</span>
-            <button @click="toggleMcp" :disabled="mcp.busy || !mcp.configured" class="relative w-11 h-6 rounded-full transition shrink-0 disabled:opacity-40" :class="mcp.enabled ? 'bg-emerald-500' : 'bg-slate-300'">
+            <button @click="toggleMcp" :disabled="mcp.busy || !mcp.configured || !sync.user || mcp.authNeeded" class="relative w-11 h-6 rounded-full transition shrink-0 disabled:opacity-40" :class="mcp.enabled ? 'bg-emerald-500' : 'bg-slate-300'">
               <span class="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all" :class="mcp.enabled ? 'left-[22px]' : 'left-0.5'"></span>
             </button>
           </div>
@@ -829,7 +829,7 @@
             <span class="text-[11px] font-bold text-slate-700 font-mono-num">{{ mcp.masked }}</span>
           </div>
           <button v-if="mcp.configured" @click="copyMcpToken" :disabled="mcp.busy" class="w-full flex items-center gap-2 px-5 py-3.5 text-xs font-medium text-indigo-600 active:bg-slate-50 transition disabled:opacity-40"><svg class="ico text-[15px]"><use :href="mcpCopied ? '#i-check' : '#i-copy'" /></svg>{{ mcpCopied ? '已复制，去 AI 客户端粘贴' : '复制访问令牌（明文）' }}</button>
-          <button @click="newMcpToken" :disabled="mcp.busy" class="w-full flex items-center gap-2 px-5 py-3.5 text-xs font-medium text-indigo-600 active:bg-slate-50 transition disabled:opacity-40"><svg class="ico text-[15px]" :class="{ 'animate-spin': mcp.busy }"><use href="#i-refresh-cw" /></svg>{{ mcp.configured ? '重置令牌（旧令牌立即失效）' : '生成访问令牌并开启' }}</button>
+          <button @click="newMcpToken" :disabled="mcp.busy || !sync.user" class="w-full flex items-center gap-2 px-5 py-3.5 text-xs font-medium text-indigo-600 active:bg-slate-50 transition disabled:opacity-40"><svg class="ico text-[15px]" :class="{ 'animate-spin': mcp.busy }"><use href="#i-refresh-cw" /></svg>{{ mcp.configured ? '重置令牌（旧令牌立即失效）' : '生成访问令牌并开启' }}</button>
         </div>
         <p class="px-5 py-3 text-[10px] text-slate-400 bg-slate-50/70 leading-relaxed">
           端点 POST /mcp（Bearer 令牌鉴权），只读：AI 只能查询出勤、工时与薪酬，改不了任何数据。开关与令牌改动即时生效，无需重启；重置后旧客户端立即失效。
@@ -1038,7 +1038,7 @@
         <div class="divide-y divide-slate-100">
           <div class="flex items-center justify-between px-5 py-3">
             <span class="text-xs text-slate-600">接入开关</span>
-            <button @click="toggleMcp" :disabled="mcp.busy || !mcp.configured" class="relative w-11 h-6 rounded-full transition shrink-0 disabled:opacity-40" :class="mcp.enabled ? 'bg-emerald-500' : 'bg-slate-300'">
+            <button @click="toggleMcp" :disabled="mcp.busy || !mcp.configured || !sync.user || mcp.authNeeded" class="relative w-11 h-6 rounded-full transition shrink-0 disabled:opacity-40" :class="mcp.enabled ? 'bg-emerald-500' : 'bg-slate-300'">
               <span class="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all" :class="mcp.enabled ? 'left-[22px]' : 'left-0.5'"></span>
             </button>
           </div>
@@ -1047,7 +1047,7 @@
             <span class="text-[11px] font-bold text-slate-700 font-mono-num">{{ mcp.masked }}</span>
           </div>
           <button v-if="mcp.configured" @click="copyMcpToken" :disabled="mcp.busy" class="w-full flex items-center gap-2 px-5 py-3.5 text-xs font-medium text-indigo-600 active:bg-slate-50 transition disabled:opacity-40"><svg class="ico text-[15px]"><use :href="mcpCopied ? '#i-check' : '#i-copy'" /></svg>{{ mcpCopied ? '已复制，去 AI 客户端粘贴' : '复制访问令牌（明文）' }}</button>
-          <button @click="newMcpToken" :disabled="mcp.busy" class="w-full flex items-center gap-2 px-5 py-3.5 text-xs font-medium text-indigo-600 active:bg-slate-50 transition disabled:opacity-40"><svg class="ico text-[15px]" :class="{ 'animate-spin': mcp.busy }"><use href="#i-refresh-cw" /></svg>{{ mcp.configured ? '重置令牌（旧令牌立即失效）' : '生成访问令牌并开启' }}</button>
+          <button @click="newMcpToken" :disabled="mcp.busy || !sync.user" class="w-full flex items-center gap-2 px-5 py-3.5 text-xs font-medium text-indigo-600 active:bg-slate-50 transition disabled:opacity-40"><svg class="ico text-[15px]" :class="{ 'animate-spin': mcp.busy }"><use href="#i-refresh-cw" /></svg>{{ mcp.configured ? '重置令牌（旧令牌立即失效）' : '生成访问令牌并开启' }}</button>
         </div>
         <p class="px-5 py-3 text-[10px] text-slate-400 bg-slate-50/70 leading-relaxed">
           端点 POST /mcp（Bearer 令牌鉴权），只读：AI 只能查询出勤、工时与薪酬，改不了任何数据。开关与令牌改动即时生效，无需重启；重置后旧客户端立即失效。
@@ -2067,6 +2067,8 @@ createApp({
       const localDays = Object.keys(records.value).length;
       const localAdj = Object.keys(monthAdjust.value).length;
 
+      loadMcpStatus().catch(() => {});
+
       // 本机干净 → 没有可丢的东西，直接拉全量
       if (localDays === 0 && localAdj === 0) {
         await window.WHTSync.pullAll();
@@ -2160,6 +2162,7 @@ createApp({
     const doLogout = () => withBusy(async () => {
       if (sync.pending > 0 && !confirm(`还有 ${sync.pending} 项未上传，确定退出？本地数据不会删除。`)) return;
       await window.WHTSync.logout({ keepLocal: true });
+      resetMcpState(true);
       showToast('已退出登录，本地数据保留');
     });
 
@@ -2189,9 +2192,19 @@ createApp({
     // 开关与令牌存服务器 DB，改动即时生效；令牌明文只在生成/复制响应里出现，页面不留存。
     const mcp = reactive({ configured: false, enabled: false, masked: '', busy: false, loaded: false, authNeeded: false });
     const mcpCopied = ref(false);
+
+    const resetMcpState = (authNeeded = true) => {
+      mcp.configured = false;
+      mcp.enabled = false;
+      mcp.masked = '';
+      mcp.authNeeded = !!authNeeded;
+      mcp.loaded = true;
+      mcp.busy = false;
+    };
+
     const mcpBadge = computed(() => {
       if (!mcp.loaded) return { text: '…', cls: 'bg-slate-100 text-slate-400' };
-      if (mcp.authNeeded) return { text: '本设备请先登录', cls: 'bg-amber-50 text-amber-600' };
+      if (mcp.authNeeded || !sync.user) return { text: '本设备请先登录', cls: 'bg-amber-50 text-amber-600' };
       if (!mcp.configured) return { text: '未配置', cls: 'bg-slate-100 text-slate-400' };
       return mcp.enabled
         ? { text: '已开启', cls: 'bg-emerald-50 text-emerald-600' }
@@ -2207,15 +2220,24 @@ createApp({
     };
 
     const loadMcpStatus = async () => {
+      if (!sync.user || !window.WHTSync || !window.WHTSync.state.token) {
+        resetMcpState(true);
+        return;
+      }
       try {
         const res = await fetch(window.WHTSync.getApiBase() + '/api/mcp/status', { headers: mcpHeaders() });
         const d = await res.json();
-        mcp.authNeeded = res.status === 401 || res.status === 403;
+        if (res.status === 401 || res.status === 403) {
+          resetMcpState(true);
+          return;
+        }
         if (d && d.ok) {
           mcp.configured = !!d.configured;
           mcp.enabled = !!d.enabled;
           mcp.masked = d.masked || '';
-          if (d.configured) mcp.authNeeded = false;
+          mcp.authNeeded = false;
+        } else {
+          resetMcpState(false);
         }
       } catch (e) { /* 静态模式/离线：保持未知态，不干扰记账主功能 */ }
       mcp.loaded = true;
@@ -2223,6 +2245,10 @@ createApp({
 
     const toggleMcp = async () => {
       if (mcp.busy) return;
+      if (!sync.user || mcp.authNeeded) {
+        showToast('请先登录账号后再设置 MCP');
+        return;
+      }
       mcp.busy = true;
       try {
         const res = await fetch(window.WHTSync.getApiBase() + '/api/mcp/enabled', {

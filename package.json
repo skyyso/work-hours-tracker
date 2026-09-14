@@ -1,6 +1,6 @@
 {
   "name": "work-hours-tracker",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "description": "工时记账：单文件前端 + 薪酬纯模块（shared/payroll.js）+ 平台无关服务端（server/）",
   "scripts": {
