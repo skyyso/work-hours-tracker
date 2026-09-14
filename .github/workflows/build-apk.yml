@@ -1,0 +1,108 @@
+name: Build Android APK
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: '版本名称 (例如 1.0.0)'
+        required: false
+        default: '1.0.0'
+
+jobs:
+  build:
+    name: Build Release APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Sync Web Assets to Android
+        run: |
+          chmod +x android/copy-web-assets.sh
+          ./android/copy-web-assets.sh
+
+      - name: Setup Keystore
+        id: sign_setup
+        run: |
+          mkdir -p android/keystore
+          KEYSTORE_PATH="$GITHUB_WORKSPACE/android/keystore/release.jks"
+          
+          if [ -n "${{ secrets.SIGNING_KEY }}" ]; then
+            echo "Using custom signing key from repository secrets..."
+            echo "${{ secrets.SIGNING_KEY }}" | base64 --decode > "$KEYSTORE_PATH"
+            echo "SIGNING_KEY_FILE=$KEYSTORE_PATH" >> $GITHUB_ENV
+            echo "KEY_STORE_PASSWORD=${{ secrets.KEY_STORE_PASSWORD }}" >> $GITHUB_ENV
+            echo "ALIAS=${{ secrets.ALIAS }}" >> $GITHUB_ENV
+            echo "KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}" >> $GITHUB_ENV
+          else
+            echo "No custom signing key provided. Generating self-signed release keystore for this build..."
+            keytool -genkeypair -v \
+              -keystore "$KEYSTORE_PATH" \
+              -alias "workhours" \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -storepass "workhours123" \
+              -keypass "workhours123" \
+              -dname "CN=WorkHours, OU=OpenClaw, O=WorkHoursTracker, L=Wuhan, ST=Hubei, C=CN"
+            echo "SIGNING_KEY_FILE=$KEYSTORE_PATH" >> $GITHUB_ENV
+            echo "KEY_STORE_PASSWORD=workhours123" >> $GITHUB_ENV
+            echo "ALIAS=workhours" >> $GITHUB_ENV
+            echo "KEY_PASSWORD=workhours123" >> $GITHUB_ENV
+          fi
+
+      - name: Build with Gradle
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease --stacktrace
+
+      - name: Prepare APK Artifact
+        id: prepare_apk
+        run: |
+          VERSION="${{ github.event.inputs.version_name || github.ref_name || '1.0.0' }}"
+          VERSION="${VERSION#v}" # 剥离前缀 v
+          
+          OUTPUT_DIR="android/app/build/outputs/apk/release"
+          APK_FILE=$(find "$OUTPUT_DIR" -name "*.apk" | head -n 1)
+          
+          if [ -z "$APK_FILE" ]; then
+            echo "Error: APK not found!"
+            exit 1
+          fi
+          
+          TARGET_APK="work-hours-tracker-v${VERSION}.apk"
+          cp "$APK_FILE" "$TARGET_APK"
+          echo "Built APK: $TARGET_APK"
+          echo "apk_path=$TARGET_APK" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Upload APK to Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: work-hours-tracker-${{ steps.prepare_apk.outputs.version }}
+          path: ${{ steps.prepare_apk.outputs.apk_path }}
+          retention-days: 30
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ steps.prepare_apk.outputs.apk_path }}
+          name: Work Hours Tracker v${{ steps.prepare_apk.outputs.version }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true

@@ -24,6 +24,18 @@ server/data/*.log
 # ── 回收站 ──────────────────────────────────────────────────
 .trash/
 
+# ── Android 工程构建生成物 ────────────────────────────────────
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/*.jks
+android/*.keystore
+android/keystore/
+android/app/src/main/assets/www/*
+!android/app/src/main/assets/www/.gitkeep
+
 # ── 杂项 ────────────────────────────────────────────────────
 .DS_Store
 *.tmp
+*.apk
