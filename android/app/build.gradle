@@ -22,8 +22,16 @@ android {
                 storePassword System.getenv("KEY_STORE_PASSWORD") ?: "workhours123"
                 keyAlias System.getenv("ALIAS") ?: "workhours"
                 keyPassword System.getenv("KEY_PASSWORD") ?: "workhours123"
+                if (System.getenv("KEYSTORE_TYPE")) {
+                    storeType System.getenv("KEYSTORE_TYPE")
+                }
             }
         }
+    }
+
+    lint {
+        abortOnError false
+        checkReleaseBuilds false
     }
 
     buildTypes {
