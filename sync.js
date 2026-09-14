@@ -21,6 +21,7 @@
     settings: 'work_settings',
     token: 'work_sync_token',
     user: 'work_sync_user',
+    lastUser: 'work_sync_last_user',
     rev: 'work_sync_rev',
     dirty: 'work_sync_dirty',
     base: 'work_sync_base',
@@ -68,7 +69,9 @@
     // 必须落 localStorage：否则用户选了「先不处理」后一刷新，阀就没了，
     // 下一次 syncNow 会把远端值静默盖到本机冲突日上。
     hold: readLS(LS.hold, null),
-    serverUsers: null   // health 探测到的服务端用户数，用于判断该显示「注册」还是「登录」
+    serverUsers: null,   // health 探测到的服务端用户数
+    allowRegister: null, // 是否开放注册
+    lastUser: readLS(LS.lastUser, null)
   };
   const dirty = loadDirty();
   state.pending = dirty.records.size + dirty.adjust.size + (dirty.settings ? 1 : 0);
@@ -404,10 +407,12 @@
       try {
         const h = await api('/api/health', { auth: false, timeoutMs: 6000 });
         state.serverUsers = h.users;
+        state.allowRegister = !!h.allowRegister;
         emit();
         return h;
       } catch (e) {
         state.serverUsers = null;
+        state.allowRegister = null;
         emit();
         throw e;
       }
@@ -422,8 +427,10 @@
       const r = await api('/api/login', { method: 'POST', auth: false, body: { username, password } });
       state.token = r.token;
       state.user = r.user;
+      state.lastUser = r.user;
       writeLS(LS.token, r.token);
       writeLS(LS.user, r.user);
+      writeLS(LS.lastUser, r.user);
       // 换账号/首次登录：从 0 开始拉全量，避免沿用上一个账号的 rev 导致漏数据
       state.rev = 0;
       writeLS(LS.rev, 0);
@@ -441,8 +448,31 @@
       if (!keepLocal) {
         localStorage.removeItem(LS.records);
         localStorage.removeItem(LS.adjust);
+        localStorage.removeItem(LS.dirty);
+        localStorage.removeItem(LS.lastUser);
+        dirty.records.clear(); dirty.adjust.clear(); dirty.settings = false;
+        state.pending = 0;
+        state.lastUser = null;
       }
       setStatus('idle');
+    },
+
+    /** 清空本地打卡缓存与脏数据（用于切换账号时的安全重置） */
+    clearLocalCache() {
+      localStorage.removeItem(LS.records);
+      localStorage.removeItem(LS.adjust);
+      localStorage.removeItem(LS.dirty);
+      localStorage.removeItem(LS.rev);
+      localStorage.removeItem(LS.hold);
+      dirty.records.clear(); dirty.adjust.clear(); dirty.settings = false;
+      state.pending = 0;
+      state.rev = 0;
+      state.hold = null;
+      emit();
+    },
+
+    getLastUser() {
+      return readLS(LS.lastUser, null) || state.lastUser;
     },
 
     /** 用服务器数据整体覆盖本地（换设备后的首次拉取） */

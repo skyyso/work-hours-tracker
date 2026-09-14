@@ -39,12 +39,12 @@ async function rpc(msg, token) {
 
 // 管理 API：与 api.test.js 同一套调用模式
 let TOKEN = null;
-async function call(method, path, body, token = TOKEN) {
+async function call(method, path, body, token = TOKEN, opts = { allowRegister: true }) {
   const headers = { 'content-type': 'application/json' };
   if (token) headers.authorization = `Bearer ${token}`;
   const res = await handleApi(new Request('http://t' + path, {
     method, headers, body: body === undefined ? undefined : JSON.stringify(body)
-  }), store, {});
+  }), store, opts);
   let json = null;
   try { json = await res.json(); } catch {}
   return { status: res.status, body: json };
@@ -166,6 +166,51 @@ section('Token 轮换：旧的立即失效');
 
   r = await call('GET', '/api/mcp/token');
   eq('取回明文是新 Token', r.body.token, globalThis.__T2);
+}
+
+// ==========================================================
+section('多用户 MCP 隔离：不同 Token 独立绑定不同用户');
+{
+  // 注册第二个用户 user2
+  let r = await call('POST', '/api/register', { username: 'alice', password: 'alice-pass-123' }, null, { allowRegister: true });
+  eq('第二个用户注册 201', r.status, 201);
+  r = await call('POST', '/api/login', { username: 'alice', password: 'alice-pass-123' }, null);
+  eq('第二个用户登录 200', r.status, 200);
+  const user2Token = r.body.token;
+
+  // 用户2 推送自己的打卡数据（9/10 10小时）
+  await call('POST', '/api/push', {
+    records: {
+      '2026-09-10': { status: 'work', shift_type: 'day', hours: 10 }
+    }
+  }, user2Token);
+
+  // 用户1 推送自己的打卡数据（9/10 6小时）
+  await call('POST', '/api/push', {
+    records: {
+      '2026-09-10': { status: 'work', shift_type: 'day', hours: 6 }
+    }
+  }, TOKEN);
+
+  // 用户2 生成自己的 MCP Token
+  r = await call('POST', '/api/mcp/token', undefined, user2Token);
+  eq('用户2 生成 MCP Token 200', r.status, 200);
+  const user2McpToken = r.body.token;
+  ok('用户2 的 MCP Token 与用户1 不同', user2McpToken !== globalThis.__T2);
+
+  // 用 用户1 的 MCP Token 查 9月总结
+  const CALL_SUMMARY = {
+    jsonrpc: '2.0', id: 2, method: 'tools/call',
+    params: { name: 'get_month_summary', arguments: { year: 2026, month: 9 } }
+  };
+  const r1 = await rpc(CALL_SUMMARY, globalThis.__T2);
+  eq('用户1 MCP 调用成功', r1.status, 200);
+  eq('用户1 工时是 6h', r1.body.result.structuredContent.hours.total, 6);
+
+  // 用 用户2 的 MCP Token 查 9月总结
+  const r2 = await rpc(CALL_SUMMARY, user2McpToken);
+  eq('用户2 MCP 调用支持成功', r2.status, 200);
+  eq('用户2 工时是 10h', r2.body.result.structuredContent.hours.total, 10);
 }
 
 // ==========================================================

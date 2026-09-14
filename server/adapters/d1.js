@@ -156,4 +156,62 @@ export class D1Store {
       ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at
     `).bind(key, value, new Date().toISOString()).run();
   }
+
+  // ---------- 用户级 MCP 接入令牌 ----------
+  async countActiveMcpTokens() {
+    const r = await this.db.prepare('SELECT COUNT(*) AS c FROM user_mcp_tokens WHERE enabled = 1').first();
+    return r ? r.c : 0;
+  }
+
+  async getUserMcpConfig(userId) {
+    const r = await this.db.prepare('SELECT * FROM user_mcp_tokens WHERE user_id = ?').bind(userId).first();
+    if (!r) return { configured: false, enabled: false, token: null };
+    return {
+      configured: true,
+      enabled: r.enabled !== 0,
+      token: r.token
+    };
+  }
+
+  async saveUserMcpToken(userId, token, tokenHash) {
+    const now = new Date().toISOString();
+    await this.db.prepare(`
+      INSERT INTO user_mcp_tokens (user_id, token, token_hash, enabled, created_at, updated_at)
+      VALUES (?, ?, ?, 1, ?, ?)
+      ON CONFLICT(user_id) DO UPDATE SET
+        token = excluded.token,
+        token_hash = excluded.token_hash,
+        enabled = 1,
+        updated_at = excluded.updated_at
+    `).bind(userId, token, tokenHash, now, now).run();
+  }
+
+  async setUserMcpEnabled(userId, enabled) {
+    const now = new Date().toISOString();
+    await this.db.prepare(`
+      UPDATE user_mcp_tokens SET enabled = ?, updated_at = ? WHERE user_id = ?
+    `).bind(enabled ? 1 : 0, now, userId).run();
+  }
+
+  async getUserByMcpTokenHash(tokenHash) {
+    const r = await this.db.prepare(`
+      SELECT u.*, m.enabled AS mcp_enabled
+      FROM user_mcp_tokens m
+      JOIN users u ON u.id = m.user_id
+      WHERE m.token_hash = ?
+    `).bind(tokenHash).first();
+    if (!r) return null;
+    return {
+      user: {
+        id: r.id,
+        username: r.username,
+        pw_hash: r.pw_hash,
+        pw_salt: r.pw_salt,
+        pw_iter: r.pw_iter,
+        rev: r.rev,
+        created_at: r.created_at
+      },
+      enabled: r.mcp_enabled !== 0
+    };
+  }
 }

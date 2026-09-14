@@ -27,6 +27,7 @@
 
 import { timingSafeEqual } from 'node:crypto';
 import payroll from '../../shared/payroll.js';
+import { hashToken } from './auth.js';
 
 const SERVER_INFO = { name: 'work-hours-tracker-mcp', version: '1.0.0' };
 // 与 MCP 官方已发布版本对齐；客户端发来的版本若认得就原样回，否则回兜底版本。
@@ -170,32 +171,47 @@ export function newMcpToken() {
 }
 
 /**
- * 读生效配置：{ configured, enabled, token }。
- * 状态语义刻意分开：未配置 → 端点 404（视为不存在）；已配置但关闭 → 503
- * （「配了但被关了，可从后台重新打开」）；令牌错 → 401。
- * @param {object} store
- * @param {string} seedToken  env 里的首启令牌；入口层传入，core 不直接读 process.env（保持平台无关）
+ * 读指定用户的生效配置：{ configured, enabled, token }。
+ * 兼容旧数据与种子：如果 user_mcp_tokens 查无记录，但 app_settings/seedToken 中存在旧 token，
+ * 则自动为 id=1 的老用户迁入，保证向后无感兼容。
  */
-export async function readMcpConfig(store, seedToken = '') {
-  let token = await store.getSetting(MCP_KEYS.token);
-  if (!token && seedToken) {
-    // 首次种子：env 有令牌且库里从没有过 → 迁入 DB（兼容旧部署，现有 token 无感切换）
-    await store.setSetting(MCP_KEYS.token, seedToken);
-    token = seedToken;
+export async function readUserMcpConfig(store, userId, seedToken = '') {
+  let cfg = await store.getUserMcpConfig(userId);
+  if (cfg && cfg.configured) return cfg;
+
+  // 兼容老单人自用历史数据迁移
+  if (userId === 1) {
+    let legacyToken = await store.getSetting(MCP_KEYS.token);
+    if (!legacyToken && seedToken) {
+      legacyToken = seedToken;
+      await store.setSetting(MCP_KEYS.token, legacyToken);
+    }
+    if (legacyToken) {
+      const legacyEnabled = (await store.getSetting(MCP_KEYS.enabled)) !== '0';
+      const tokenHash = await hashToken(legacyToken);
+      await store.saveUserMcpToken(1, legacyToken, tokenHash);
+      if (!legacyEnabled) {
+        await store.setUserMcpEnabled(1, false);
+      }
+      return {
+        configured: true,
+        enabled: legacyEnabled,
+        token: legacyToken
+      };
+    }
   }
-  if (!token) return { configured: false, enabled: false, token: null };
-  const enabled = (await store.getSetting(MCP_KEYS.enabled)) !== '0';
-  return { configured: true, enabled, token };
+
+  return { configured: false, enabled: false, token: null };
 }
 
-/** 生成/轮换令牌并自动启用；明文只应出现在本次调用方的响应里，DB 之外不留副本 */
-export async function saveMcpToken(store, token) {
-  await store.setSetting(MCP_KEYS.token, token);
-  await store.setSetting(MCP_KEYS.enabled, '1');
+/** 生成/轮换用户专有令牌并自动启用 */
+export async function saveUserMcpToken(store, userId, token) {
+  const tokenHash = await hashToken(token);
+  await store.saveUserMcpToken(userId, token, tokenHash);
 }
 
-export async function setMcpEnabled(store, enabled) {
-  await store.setSetting(MCP_KEYS.enabled, enabled ? '1' : '0');
+export async function setUserMcpEnabled(store, userId, enabled) {
+  await store.setUserMcpEnabled(userId, enabled);
 }
 
 // ---------- 参数校验 ----------
@@ -533,28 +549,52 @@ async function handleRpcMessage(msg, store, userId) {
 
 /**
  * HTTP 入口。
- * 用户定位：MCP token 与站点登录态无关；当前是单人自用系统，固定取 id=1 的首个用户
- * （与 /api/health 的 users:1 对齐）。多人化时这里要换成 token→user 映射。
+ * 多用户架构：MCP 请求由 Bearer Token 鉴权，根据 tokenHash 检索绑定的 user。
+ * 完全解绑单人 id=1 硬编码，不同用户的 AI 客户端独立查各自打卡与薪酬。
  * @param {Request} request
  * @param {object} store   SqliteStore / D1Store 实例
  * @param {{seedToken?:string}} opts  MCP_AUTH_TOKEN 环境变量值（仅首次种子用）
  */
 export async function handleMcp(request, store, opts = {}) {
-  const cfg = await readMcpConfig(store, opts.seedToken);
-  if (!cfg.configured) {
-    return new Response('MCP 未启用：尚未配置接入令牌（页面「设置 → AI 接入 (MCP)」可一键生成）', { status: 404 });
+  // 全局若未配置过任何可用 token，端点按设计直接关闭（404 隐藏端点）
+  const activeCount = await store.countActiveMcpTokens();
+  let legacyCfg1 = null;
+  if (activeCount === 0) {
+    legacyCfg1 = await readUserMcpConfig(store, 1, opts.seedToken);
+    if (!legacyCfg1.configured) {
+      return new Response('MCP 未启用：尚未配置接入令牌（页面「设置 → AI 接入 (MCP)」可一键生成）', { status: 404 });
+    }
   }
-  if (!cfg.enabled) {
-    return new Response('MCP 已在后台关闭：可在页面「设置 → AI 接入 (MCP)」重新开启', { status: 503 });
-  }
+
   if (request.method !== 'POST') {
     return new Response('Method Not Allowed（本端点只接受 POST）', {
       status: 405, headers: { allow: 'POST' }
     });
   }
+
   const provided = (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
-  if (!provided || !tokenEquals(provided, cfg.token)) {
-    return json({ error: 'unauthorized' }, 401);
+  if (!provided) {
+    return json({ error: 'unauthorized', message: '缺少 Authorization Bearer 令牌' }, 401);
+  }
+
+  const tokenHash = await hashToken(provided);
+  let hit = await store.getUserByMcpTokenHash(tokenHash);
+
+  // 兜底兼容迁移：若尚未迁入 user_mcp_tokens，检查 user 1 是否有遗留配置
+  if (!hit) {
+    const cfg1 = legacyCfg1 || await readUserMcpConfig(store, 1, opts.seedToken);
+    if (cfg1.configured && cfg1.token && tokenEquals(provided, cfg1.token)) {
+      const u1 = await store.getUserById(1);
+      if (u1) hit = { user: u1, enabled: cfg1.enabled };
+    }
+  }
+
+  if (!hit) {
+    return json({ error: 'unauthorized', message: '无效的 MCP 访问令牌' }, 401);
+  }
+
+  if (!hit.enabled) {
+    return new Response('MCP 已在后台关闭：可在页面「设置 → AI 接入 (MCP)」重新开启', { status: 503 });
   }
 
   let body;
@@ -564,8 +604,7 @@ export async function handleMcp(request, store, opts = {}) {
     return json(rpcError(null, -32700, 'JSON 解析失败'), 400);
   }
 
-  const user = await store.getUserById(1);
-  if (!user) return json(rpcError(null, -32603, '系统中还没有用户'), 500);
+  const user = hit.user;
 
   if (Array.isArray(body)) {
     const responses = [];

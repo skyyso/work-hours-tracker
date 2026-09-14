@@ -429,7 +429,6 @@
             <span class="font-semibold text-slate-600">合计应得</span>
             <span class="text-lg font-bold text-indigo-600 font-mono-num">{{ money(earnedTotal) }}</span>
           </div>
-          <p v-if="!monthStats.finalized" class="text-[10px] text-slate-400 leading-relaxed pt-1">查获在本月只作记录（当前累计 <b class="text-slate-500 font-mono-num">{{ signed(monthStats.rawReview) }}</b>）；须次月初组长审核、扣除漏查与其他扣款后提交定稿才算奖金。未定稿一律按 ¥0 计入应得，与未达 {{ settings.fullDays }} 天不计满勤奖同一个道理。</p>
         </div>
         <!-- 两套口径之间唯一的桥：明说挣得的钱里哪一部分已发、哪一部分要结转。
              没有这一行，用户看到挣得 ≠ 进账就会懿。 -->
@@ -645,6 +644,10 @@
             <p v-if="monthStats.missedCount > 0" class="text-slate-600">
               本月 {{ monthStats.missedCount }} 次漏查，将扣 <b class="text-rose-600">{{ money(monthStats.missedPenalty) }}</b>，约等于白干 {{ fmt(monthStats.missedPenalty / settings.rate) }} 小时。
             </p>
+            <p v-if="monthStats.totalHours > 0" class="text-slate-600">
+              综合时薪 <b class="text-indigo-600 font-mono-num font-bold">¥{{ effectiveHourly }}</b> /h
+              <span class="text-slate-400">（合计应得 {{ money(earnedTotal) }} ÷ 总工时 {{ fmt(monthStats.totalHours) }}h，含满勤奖与审核定稿）</span>
+            </p>
           </template>
         </div>
       </div>
@@ -792,13 +795,14 @@
               class="w-full text-xs text-slate-700 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-indigo-500" />
             <div class="flex gap-2 pt-0.5">
               <button @click="doLogin" :disabled="sync.busy" class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-indigo-600 text-white active:scale-95 transition disabled:opacity-40">登录</button>
-              <button v-if="sync.serverUsers === 0" @click="doRegister" :disabled="sync.busy" class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 text-white active:scale-95 transition disabled:opacity-40">创建首个账号</button>
+              <button v-if="sync.allowRegister" @click="doRegister" :disabled="sync.busy" class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 text-white active:scale-95 transition disabled:opacity-40">{{ sync.serverUsers === 0 ? '创建首个账号' : '注册新账号' }}</button>
             </div>
           </div>
           <p class="px-5 py-2.5 text-[10px] leading-relaxed bg-slate-50/70"
             :class="sync.serverUsers === null ? 'text-amber-700' : 'text-slate-400'">
             <template v-if="sync.serverUsers === null">没探到同步服务（当前只跑静态页）。数据仍存本机，一切功能正常；要多设备共用需先启动 server/。</template>
             <template v-else-if="sync.serverUsers === 0">服务端还没有账号。创建首个账号后就会自动关闭注册，不会被陌生人开号。</template>
+            <template v-else-if="sync.allowRegister">服务端已开启多用户注册，填写用户名密码即可直接创建账号。</template>
             <template v-else>登录后打卡数据会自动同步到服务器，多设备共用同一份。未登录也能正常记账，只存本机。</template>
           </p>
           <label class="flex items-center justify-between gap-2 px-5 py-3">
@@ -1374,6 +1378,12 @@ createApp({
     // 处罚吃穿下半月工时时，结转那笔被 ¥0 兰住，于是 paid+carry > earnedTotal。页面需要明说。
     const earnedFloored = computed(() => flows.value.floored);
 
+    // 综合时薪（含满勤与定稿奖惩后的实际每小时劳动收益）
+    const effectiveHourly = computed(() => {
+      const hrs = monthStats.value.totalHours;
+      return hrs > 0 ? (earnedTotal.value / hrs).toFixed(2) : '0.00';
+    });
+
     const penaltyDetails = computed(() => P.penaltyDetails(currentYear.value, currentMonth.value, payrollCtx()));
 
     const recordCount = computed(() => Object.keys(records.value).length);
@@ -1720,7 +1730,7 @@ createApp({
     // ===== 云端同步（离线优先：本地 localStorage 仍是唯一真相，同步只是额外把数据推到服务器）=====
     const sync = reactive({
       status: 'idle', user: null, pending: 0, lastSyncAt: null, lastError: '',
-      serverUsers: null, apiBase: '', busy: false, hold: null
+      serverUsers: null, allowRegister: null, apiBase: '', busy: false, hold: null
     });
     const syncPanelOpen = ref(false);
     const loginForm = ref({ username: '', password: '' });
@@ -2072,6 +2082,7 @@ createApp({
           sync.lastSyncAt = s.lastSyncAt;
           sync.lastError = s.lastError;
           sync.serverUsers = s.serverUsers;
+          sync.allowRegister = s.allowRegister;
           sync.hold = s.hold;
         });
         sync.apiBase = window.WHTSync.getApiBase() === location.origin ? '' : window.WHTSync.getApiBase();
@@ -2106,7 +2117,7 @@ createApp({
       copied, dataCopied, toast,
       monthStats, prevStats, prevLabel, nextLabel,
       payoutThisA, payoutThisB, payoutNextB, penaltyDetails,
-      earnedTotal, cashTotal, earnedSplit, earnedFloored, payDayAPassed,
+      earnedTotal, cashTotal, earnedSplit, earnedFloored, payDayAPassed, effectiveHourly,
       fullDaysLeft,
       fmt, money, signed, moneyParts, boardMain, buildReport, applyImport,
       isToday, isCurrentMonth, getRecord, hasPenalty, cellClass, isCutEdge,

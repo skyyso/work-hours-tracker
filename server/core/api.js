@@ -6,7 +6,7 @@ import {
   hashPassword, verifyPassword, newToken, hashToken, bearerFrom, SESSION_TTL_MS
 } from './auth.js';
 import {
-  readMcpConfig, saveMcpToken, setMcpEnabled, newMcpToken, maskToken
+  readUserMcpConfig, saveUserMcpToken, setUserMcpEnabled, newMcpToken, maskToken
 } from './mcp.js';
 import {
   BadRequest, normalizeRecord, normalizeAdjust, normalizeSettings,
@@ -102,7 +102,13 @@ export async function handleApi(request, store, opts = {}) {
   try {
     // ---------- 健康检查 ----------
     if (path === '/api/health' && method === 'GET') {
-      return json({ ok: true, api: API_VERSION, users: await store.countUsers(), now: new Date().toISOString() });
+      return json({
+        ok: true,
+        api: API_VERSION,
+        users: await store.countUsers(),
+        allowRegister: !opts.allowRegister ? (await store.countUsers()) === 0 : true,
+        now: new Date().toISOString()
+      });
     }
 
     // ---------- 注册 ----------
@@ -238,13 +244,13 @@ export async function handleApi(request, store, opts = {}) {
     }
 
     // ---------- MCP 接入管理（登录态即可操作；单人系统无特权分级） ----------
-    // 开关与令牌存 DB，改动即时生效；令牌明文只在 POST /api/mcp/token 的响应里出现一次。
+    // 开关与令牌存 user_mcp_tokens 表，每个用户独立隔离；令牌明文只在 POST /api/mcp/token 的响应里出现一次。
     if (path.startsWith('/api/mcp/')) {
-      await requireAuth(store, request);
+      const user = await requireAuth(store, request);
       const sub = path.slice('/api/mcp/'.length);
 
       if (sub === 'status' && method === 'GET') {
-        const cfg = await readMcpConfig(store, opts.mcpSeedToken);
+        const cfg = await readUserMcpConfig(store, user.id, opts.mcpSeedToken);
         return json({
           ok: true, configured: cfg.configured, enabled: cfg.enabled,
           masked: cfg.configured ? maskToken(cfg.token) : null
@@ -252,18 +258,18 @@ export async function handleApi(request, store, opts = {}) {
       }
       if (sub === 'token' && method === 'POST') {
         const token = newMcpToken();
-        await saveMcpToken(store, token);
+        await saveUserMcpToken(store, user.id, token);
         return json({ ok: true, token, enabled: true, note: '明文仅此一次展示，请立即保存' });
       }
       if (sub === 'token' && method === 'GET') {
-        const cfg = await readMcpConfig(store, opts.mcpSeedToken);
+        const cfg = await readUserMcpConfig(store, user.id, opts.mcpSeedToken);
         if (!cfg.configured) return err('尚未配置 MCP 令牌，请先生成', 404);
         return json({ ok: true, token: cfg.token });
       }
       if (sub === 'enabled' && method === 'POST') {
         const body = await readJson(request);
         if (typeof body.enabled !== 'boolean') return err('enabled 必须是布尔值');
-        await setMcpEnabled(store, body.enabled);
+        await setUserMcpEnabled(store, user.id, body.enabled);
         return json({ ok: true, enabled: body.enabled });
       }
       return err('接口不存在: ' + path, 404);

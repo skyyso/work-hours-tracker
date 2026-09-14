@@ -66,20 +66,21 @@ CREATE TABLE IF NOT EXISTS settings (
   updated_at TEXT    NOT NULL
 );
 
--- App 级键值：服务自身的运行时配置（当前用于 MCP 接入开关与令牌）。
--- 刻意与 users/settings 分开：它不属于任何用户，不参与同步协议，
--- 客户端 push 碰不到它，增量拉取也不会把它带出去。
+-- App 级键值：服务自身的运行时配置（保留用于全局系统配置）
 CREATE TABLE IF NOT EXISTS app_settings (
   key        TEXT    PRIMARY KEY,
   value      TEXT    NOT NULL,
   updated_at TEXT    NOT NULL
 );
 
--- App 级键值：服务自身的运行时配置（当前用于 MCP 接入开关与令牌）。
--- 刻意与 users/settings 分开：它不属于任何用户，不参与同步协议，
--- 客户端 push 碰不到它，增量拉取也不会把它带出去。
-CREATE TABLE IF NOT EXISTS app_settings (
-  key        TEXT    PRIMARY KEY,
-  value      TEXT    NOT NULL,
+-- 用户级 MCP Token 表：支持多用户独立配置 AI 接入令牌
+CREATE TABLE IF NOT EXISTS user_mcp_tokens (
+  user_id    INTEGER PRIMARY KEY REFERENCES users(id),
+  token      TEXT    NOT NULL,
+  token_hash TEXT    NOT NULL UNIQUE,
+  enabled    INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT    NOT NULL,
   updated_at TEXT    NOT NULL
- );
+);
+CREATE INDEX IF NOT EXISTS idx_user_mcp_hash ON user_mcp_tokens(token_hash);
+

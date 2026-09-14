@@ -57,8 +57,8 @@
   额度用尽后转纯后台轮询。技术日志仅输出到控制台（`[boot-guard]` 前缀）。
 - `shared/payroll.js`：独立同构薪酬计算模块（包含时薪折算、截断规则、周期合并等 30+ 纯函数）。
 - `sync.js`：本地优先增量同步适配层。
-- `server/`：轻量级 REST API 服务端（支持鉴权、版本同步、健康检查 `/api/health`），
-  并内置只读 MCP 端点（`POST /mcp`）：AI 客户端可查询出勤与薪酬，配置在页面「设置 → AI 接入 (MCP)」管理，开关/令牌即时生效。
+- `server/`：轻量级 REST API 服务端（支持多用户鉴权、版本同步、健康检查 `/api/health`），
+  并内置只读 MCP 端点（`POST /mcp`）：AI 客户端可查询出勤与薪酬。支持多用户独立 MCP 令牌隔离，配置在页面「设置 → AI 接入 (MCP)」管理，开关/令牌即时生效。
 - `.build/`：Tailwind CSS 预编译工作区（只在开发机跑，产物是 `vendor/tailwind.css`，运行时不需要它）。
   **改 `index.html` 里出现的新 Tailwind class 后必须重跑**：`cd .build && npx tailwindcss -i input.css -o ../vendor/tailwind.css --minify`，
   否则新样式不在预编译产物里，页面静默丢样式（2026-09-13 MCP 开关按钮不可见即此因）。
@@ -103,7 +103,7 @@ systemctl enable --now work-hours-tracker.service
 ```
 
 单元文件关键内容（端口固定 9522：localStorage 按 origin 隔离，换端口 = 换 origin，
-已有打卡数据会看不见，勿改）：
+已有打卡数据会看不见，勿改；如需开启多用户注册，可添加 `Environment=ALLOW_REGISTER=1`）：
 ```ini
 [Unit]
 Description=Work Hours Tracker (Node: static + sync API)
@@ -116,6 +116,7 @@ WorkingDirectory=/root/.openclaw/workspace/work-hours-tracker/server
 ExecStart=/usr/bin/node --disable-warning=ExperimentalWarning node-server.js
 Environment=PORT=9522
 Environment=HOST=0.0.0.0
+# Environment=ALLOW_REGISTER=1 # 开放多用户自适应注册（首个用户创建后如需继续允许新账号注册可启用）
 Restart=always
 RestartSec=3
 
@@ -171,9 +172,10 @@ curl -s http://127.0.0.1:9522/api/health
 
 - **工具 7 个**（全部只读，不写库）：`get_month_summary` / `get_shift_records` / `get_payroll_settings` /
   `get_penalty_details` / `simulate_leave` / `list_month_overview` / `get_business_rules`
-- **配置存 DB**（`app_settings` 表），页面「设置 → AI 接入 (MCP)」可开关/生成/重置令牌，**即时生效无需重启**
+- **配置存 DB**（`user_mcp_tokens` 表，用户级物理隔离），页面「设置 → AI 接入 (MCP)」可开关/生成/重置各自令牌，**即时生效无需重启**
+- **多用户隔离**：各用户 AI 客户端凭借专属 Bearer Token 鉴权，仅查自身出勤打卡与薪酬概况，互不干扰
 - `MCP_AUTH_TOKEN` 环境变量只做首启种子（库里从没有过令牌时迁入 DB），不设也行
 - 状态语义：未配置 → `404`（端点视为不存在）；已配置但关闭 → `503`；令牌错误 → `401`
 - 管理 API（登录态）：`GET /api/mcp/status`（掩码）、`POST /api/mcp/token`（生成/重置，明文仅回一次）、
   `GET /api/mcp/token`（复制用取回明文）、`POST /api/mcp/enabled`
-- 测试：`cd server && node --disable-warning=ExperimentalWarning test/mcp.test.js`（39 项）
+- 测试：`cd server && node --disable-warning=ExperimentalWarning test/mcp.test.js`（47 项，含多用户隔离验证）
