@@ -99,12 +99,32 @@ jobs:
           path: ${{ steps.prepare_apk.outputs.apk_path }}
           retention-days: 30
 
+      - name: Extract Release Notes from CHANGELOG
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          python3 -c "
+          import re
+          version = '${{ steps.prepare_apk.outputs.version }}'
+          tag = 'v' + version if not version.startswith('v') else version
+          try:
+              with open('CHANGELOG.md', 'r', encoding='utf-8') as f:
+                  content = f.read()
+              pattern = r'### ' + re.escape(tag) + r'[^\n]*\n(.*?)(?=\n### v|\Z)'
+              m = re.search(pattern, content, re.DOTALL)
+              notes = m.group(1).strip() if m else ''
+          except Exception:
+              notes = ''
+          with open('current_release_notes.md', 'w', encoding='utf-8') as f:
+              f.write(notes)
+          "
+
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           files: ${{ steps.prepare_apk.outputs.apk_path }}
           name: Work Hours Tracker v${{ steps.prepare_apk.outputs.version }}
+          body_path: current_release_notes.md
           draft: false
           prerelease: false
           generate_release_notes: true

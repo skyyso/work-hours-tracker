@@ -1,0 +1,68 @@
+name: Sync Release Notes
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'CHANGELOG.md'
+      - '.github/workflows/sync-releases.yml'
+
+jobs:
+  update-releases:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Update GitHub Releases
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          python3 -c "
+          import os, urllib.request, json, re
+
+          token = os.environ['GITHUB_TOKEN']
+          repo = os.environ['REPO']
+          headers = {
+              'Authorization': f'Bearer {token}',
+              'Accept': 'application/vnd.github+json',
+              'User-Agent': 'Actions-Release-Syncer'
+          }
+
+          # 1. 解析 CHANGELOG.md 中的各版本内容
+          with open('CHANGELOG.md', 'r', encoding='utf-8') as f:
+              content = f.read()
+
+          pattern = r'### (v\d+\.\d+\.\d+)[^\n]*\n(.*?)(?=\n### v|\Z)'
+          matches = re.findall(pattern, content, re.DOTALL)
+          changelogs = {tag: body.strip() for tag, body in matches}
+          print('Found changelogs for tags:', list(changelogs.keys()))
+
+          # 2. 获取现有的 releases
+          url = f'https://api.github.com/repos/{repo}/releases'
+          req = urllib.request.Request(url, headers=headers)
+          with urllib.request.urlopen(req) as resp:
+              releases = json.loads(resp.read().decode())
+
+          # 3. 逐个更新 release body
+          for r in releases:
+              tag = r.get('tag_name')
+              rel_id = r.get('id')
+              if tag in changelogs:
+                  new_body = changelogs[tag]
+                  # 补全 compare 链接
+                  if 'Full Changelog' not in new_body:
+                      new_body += f'\n\n---\n**Full Changelog**: https://github.com/{repo}/commits/{tag}'
+                  
+                  update_url = f'https://api.github.com/repos/{repo}/releases/{rel_id}'
+                  data = json.dumps({'body': new_body}).encode('utf-8')
+                  up_req = urllib.request.Request(update_url, data=data, headers=headers, method='PATCH')
+                  with urllib.request.urlopen(up_req) as up_resp:
+                      print(f'Successfully updated release {tag} (ID: {rel_id})')
+              else:
+                  print(f'No changelog found for tag {tag}')
+          "
