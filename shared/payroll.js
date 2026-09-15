@@ -287,26 +287,32 @@
   }
 
   // ===== 格式化 =====
-  function fmt(n) { return (Number(n) || 0).toFixed(1); }
-  function money(n) { return '¥' + (Number(n) || 0).toFixed(1); }
-  function signed(n) {
+  // 消除浮点二进制抖动，同时保留原始数据（不进行有损进位截断）
+  function rawAmount(n) {
     var v = Number(n) || 0;
-    return (v >= 0 ? '+¥' : '-¥') + Math.abs(v).toFixed(1);
+    return Math.round((v + Number.EPSILON) * 100) / 100;
+  }
+  function fmt(n) { return (Number(n) || 0).toFixed(1); }
+  function money(n) { return '¥' + rawAmount(n); }
+  function signed(n) {
+    var v = rawAmount(n);
+    return (v >= 0 ? '+¥' : '-¥') + Math.abs(v);
   }
 
   /**
    * 金额拆成 符号/整数部/小数部，供看板主数字分层渲染（大字只放整数部）。
-   * 必须从 toFixed(1) 的结果上切，不能用 Math.floor 另算，
-   * 否则 99.96 会被 money() 进为 100.0、而拆分出 99.0，两处数字对不上。
+   * 保留原始数据的小数部分，不进行有损四舍五入。
    */
   function moneyParts(n) {
-    var v = Number(n) || 0;
-    var s = Math.abs(v).toFixed(1);
+    var v = rawAmount(n);
+    var s = String(Math.abs(v));
     var dot = s.indexOf('.');
+    var intPart = dot !== -1 ? s.slice(0, dot) : s;
+    var fracPart = dot !== -1 ? s.slice(dot) : '';
     return {
       sign: v < 0 ? '-' : '',
-      int: s.slice(0, dot).replace(/\B(?=(\d{3})+(?!\d))/g, ','),   // 千分位
-      frac: s.slice(dot)
+      int: intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ','),   // 千分位
+      frac: fracPart
     };
   }
 

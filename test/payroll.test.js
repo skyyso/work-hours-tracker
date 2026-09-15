@@ -425,20 +425,22 @@ test('isCurrentMonth / isSameDay 只认传进来的 now', () => {
 
 // ───────────────────────── 格式化 ─────────────────────────
 
-test('金额格式化保留 1 位，null/undefined 当 0', () => {
+test('金额格式化保留原始数据（分位不截断，不进位），null/undefined 当 0', () => {
   assert.equal(P.fmt(undefined), '0.0');
-  assert.equal(P.money(null), '¥0.0');
-  assert.equal(P.money(1234.56), '¥1234.6');
-  assert.equal(P.signed(0), '+¥0.0');
-  assert.equal(P.signed(-5), '-¥5.0');
-  assert.equal(P.signed(30), '+¥30.0');
+  assert.equal(P.money(null), '¥0');
+  assert.equal(P.money(1234.56), '¥1234.56');
+  assert.equal(P.money(2018.25), '¥2018.25');
+  assert.equal(P.signed(0), '+¥0');
+  assert.equal(P.signed(-5), '-¥5');
+  assert.equal(P.signed(-50.25), '-¥50.25');
+  assert.equal(P.signed(30), '+¥30');
 });
 
-test('moneyParts 从 toFixed(1) 的结果上切，不另算整数部', () => {
-  // 99.96 若用 Math.floor 另算会得到 99，与 money() 的 ¥100.0 打架
-  assert.deepEqual(P.moneyParts(99.96), { sign: '', int: '100', frac: '.0' });
-  assert.deepEqual(P.moneyParts(-1234.56), { sign: '-', int: '1,234', frac: '.6' });
-  assert.deepEqual(P.moneyParts(0), { sign: '', int: '0', frac: '.0' });
+test('moneyParts 保留原始数据小数位，千分位与小数部拆分对齐', () => {
+  assert.deepEqual(P.moneyParts(99.96), { sign: '', int: '99', frac: '.96' });
+  assert.deepEqual(P.moneyParts(2018.25), { sign: '', int: '2,018', frac: '.25' });
+  assert.deepEqual(P.moneyParts(-1234.56), { sign: '-', int: '1,234', frac: '.56' });
+  assert.deepEqual(P.moneyParts(0), { sign: '', int: '0', frac: '' });
   assert.deepEqual(P.moneyParts(1234567.8), { sign: '', int: '1,234,567', frac: '.8' });
 });
 
